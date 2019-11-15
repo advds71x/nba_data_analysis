@@ -11,6 +11,7 @@ output:
     toc_float: yes
   pdf_document:
     toc: yes
+permalink: /description
 ---
 
 ```{r setup, include=FALSE}
