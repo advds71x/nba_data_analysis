@@ -1,0 +1,22 @@
+---
+title: "NBA Data Analysis Project"
+author: "Kate Li, Runzhe Li, Yifan Zhang, Linda Zhou"
+date: "November 15, 2019"
+output:
+  html_document:
+    highlight: tango
+    number_sections: no
+    theme: cosmo
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Introduction 
+This is the rmarkdown file for our final project. 
