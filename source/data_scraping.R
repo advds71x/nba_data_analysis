@@ -15,14 +15,16 @@ get_schedule_data = function(year, month){
     .[[1]]
   
   # remove playoff games for april
-  if (month=="april"){
+  if (month=="april" & year!='2020'){
     playoff_pos = which(game_stats$Date=='Playoffs')
     game_stats = game_stats[1:(playoff_pos-1),]
   }
+  game_stats = data.frame(game_stats) %>%
+    mutate(Season = paste0(as.numeric(year)-1,'-',substr(year,3,4)))
   return(game_stats)
 }
 
-year_list = as.character(c(2019))
+year_list = as.character(2016:2020)
 month_list = c("october","november","december",
                "january","february","march","april")
 
