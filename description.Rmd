@@ -18,12 +18,8 @@ permalink: /description
 knitr::opts_chunk$set(echo = T,warning=F, message=F)
 ```
 
-
-## Introduction 
-This is the rmarkdown file for our final project. 
-
 ## Motivation and Overview
-The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. As NBA fans ourselves, we thought it would be interesting to predict the NBA playoff teams for this season. The target audience are NBA fans all over the world. 
+The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. During the regular season, each of the 30 teams (15 in the Eastern Conference and 15 in the Western Conference) plays 82 games. At the conclusion of the regular season, the top eight teams in each conference advance to the playoffs for a chance to compete for the championship title. Towards the end of the regular season, the race for the final few playoff spots are very intense, and usually it isn't until the final game of the regular season is over when we know which teams have made the cut. As NBA fans ourselves, we are eager to find out which teams will make the playoffs this year (2019-20 NBA season), but rather than wait until next April, as data analysts, we thought it would be interesting if we could make such predictions now. We hope our analysis will lead to meaningful insights that will be of interest to NBA fans all over the world. 
 
 ## Project Objectives
 The goal of this project is to build a machine learning model that can predict the winning percentages of the NBA teams in the Western Conference, and thus the playoff teams. 
