@@ -70,5 +70,5 @@ get_team_stats = function(year_min = 2016, year_max = 2020, game_min = 1, game_m
 }
 team_stats = get_team_stats()
 
-readr::write_csv(game_stats,"./data/game_stats.csv")
-readr::write_csv(team_stats,"./data/team_stats.csv")
+readr::write_csv(game_stats,"./data/game_stats_all.csv")
+readr::write_csv(team_stats,"./data/team_stats_all.csv")
