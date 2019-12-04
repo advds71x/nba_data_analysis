@@ -22,13 +22,9 @@ knitr::opts_chunk$set(echo = T,warning=F, message=F)
 The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. During the regular season, each of the 30 teams (15 in the Eastern Conference and 15 in the Western Conference) plays 82 games. At the conclusion of the regular season, the top eight teams in each conference advance to the playoffs for a chance to compete for the championship title. Towards the end of the regular season, the race for the final few playoff spots are very intense, and usually it isn't until the final game of the regular season is over when we know which teams have made the cut. As NBA fans ourselves, we are eager to find out which teams will make the playoffs this year (2019-20 NBA season), but rather than wait until next April, as data analysts, we thought it would be interesting if we could make such predictions now. We hope our analysis will lead to meaningful insights that will be of interest to NBA fans all over the world. 
 
 ## Project Objectives
-The goal of this project is to build a machine learning model that can predict the winning percentages of the NBA teams in the Western Conference, and thus the playoff teams. 
+The goal of this project is to build a machine learning model that can predict the winning percentages of the NBA teams in the Western Conference, and thus the playoff teams (the eight teams with the highest winning percentages). In addition to overall winning percentages, we will also provide predicted winning percentages for home games and for away games for each team.
 
-We would like to learn more about feature engineering and machine learning models. We will undergo a comprehensive background study of NBA to manually decide what features to use. Then feature learning techniques will be applied. We also plan to evaluate different models. A successful model will predict the 2019-2020 NBA playoffs in the Western Conference. Ideally the model could also be trained to predict the playoff teams in the Eastern Conference and finally round-by-round playoff predictions.
-
-Some optional features we can consider include predictions of winning percentages for home games and for away games for each team.
-
-
+We will undergo a comprehensive background study of the NBA to manually decide on what features to use. Then feature learning techniques will be applied. We also plan to evaluate different models. A successful model will predict the 2019-2020 NBA playoffs in the Western Conference. Ideally, the model could also be trained to predict the playoff teams in the Eastern Conference and finally round-by-round playoff predictions.
 
 
 ## Related Work and Literature Review
@@ -42,14 +38,14 @@ Bradeley-Terry model
 ## Data 
 
 ### Data Source
-The data will be collected from Basketball Reference website. The database contains player statistics since 1946, including points per game, assists per game, rebounds per game, etc,. The database also provides team statistics, including 3 point percentages, winning percentages, etc,. 
+All data were collected from the Basketball Reference website (https://www.basketball-reference.com/). The database contains player statistics including points per game, assists per game, rebounds per game, etc. of all players who have played in the NBA league since 1949-50 (the inaugural season of the NBA). The database also provides team statistics, including team 3-point percentages, winning percentages, etc. 
 
 ### Data Scraping 
-We used `rvest` package to scrape the following data from Basketball Reference website:
+We used the `rvest` package to scrape the following data from the Basketball Reference website:
 
-* `team_stats`: The team statistics of first 20 games from season 2016-17 to 2019-20. We would use these data to define the team performance during specific season in the feature engineering section.
+* `team_stats`: Team statistics of the first 20 games from season 2016-17 to 2019-20. We would use these data to define team performance during a specific season in the feature engineering step.
 
-* `game_stats`: The game results (W-L record and scores) for each of the remaining 62 games from season 2016-17 to 2018-19. We would use these data in the mode building section. 
+* `game_stats`: Game results (W-L record and scores) for each of the remaining 62 games from season 2016-17 to 2018-19. We would use these data in the model building step. 
 
 ```{r,warning=F,message=F}
 team_stats = readr::read_csv("./data/team_stats_all.csv")
@@ -59,10 +55,18 @@ head(game_stats)
 
 ```
 
-We did not include the code for web scraping in this rmarkdown file in order to save the runtime. You can check the `data_scraping.R` file in the source folder for more details. Here we just showed the first few rows of the data. 
+We do not include the code for web scraping in this rmarkdown file. Instead, please refer to the `data_scraping.R` file in the source folder for more details. Here we just show the first few rows of the data. 
 
 ### Data Wrangling
-Data wrangling would be performed throughout the whole data analysis process covering data tidying, EDA, feature engineering, and model building. Here we demonstrated some necessary data wrangling procedures which were prepared for further analysis. 
+Data wrangling is performed throughout the whole data analysis process covering data tidying, exploratory data analysis, feature engineering, and model building. Here we demonstrate some necessary data wrangling procedures which were prepared for further analysis. 
+
+We list all 30 teams in the league (both full franchasise name and abbreviation), and add an indicator to differentiate the 15 teams in the Western Conference and the 15 in the Eastern Conference.
+
+We obtain the win shares stats (estimate of the number of wins contributed by a player) of the players ranked in the top 100 of the league in terms of win shares (WS) in a particular season. We then also identify the win shares of the player with the highest win shares on each team. For example, in the 2017-18 season, the Dallas Mavericks (DAL) team had two players ranked in the top 100 in terms of WS: Dwight Powell (WS 6.6) and Dirk Nowitzki (WS 4.8). The highest win shares of the Dallas Mavericks team is thus 6.6.
+
+We create a function that organizes team data in the first 20 games for all teams in a particular season. This process includes extracting from a larger database relevant variables which include number of wins, number of losses, winning percentages, total points scored by team, and total points scored by opponents. We also append conference ranking of each team at the end of the first 20 games to the data by ranking the winning percentages.
+
+We also create a function that organizes data of all regular season games in a particular season. This process includes extracting from a larger database relevant variables which include date of game, name of home team and visiting team, and points scored by home team and visiting team. We also append an indicator variable indicating whether the game was won by the home team by comparing points scored by home team and visiting team.
 
 ```{r,warning=F,message=F}
 library(rvest)
@@ -171,16 +175,21 @@ WL_record_cal = function(game_schedule,WL_record){
 
 team_def_off_plot = function(year){
   team_stats_year = get_team_year_feature(year)
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
   p = team_stats_year %>% 
     ggplot(aes(x = TeamPTS/20, y = OpponentPTS/20))+
     geom_point(aes(size = -ConfRank, col = factor(western)))+
     geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
     geom_abline(slope = 1,intercept = 0,linetype="dashed", color = "red",size = 2)+
-    facet_grid(~western)+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
+    facet_grid(~western, labeller = as_labeller(conference_names))+
+    labs(title = paste0('First 20 games of Season ',year-1,'-',substr(year,3,4)))+
     theme(plot.title = element_text(hjust = 0.5))+
     coord_fixed()+
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom") +
+    guides(colour=FALSE) +
+    scale_size("Conference standing after 20 games",breaks=c(-15,-10,-5),labels=c(15,10,5))+
+    xlab("Team Points (average per game)")+
+    ylab("Opponent Points (average per game)")
   print(p)
 }
 team_def_off_plot(2019)
@@ -199,17 +208,21 @@ team_rank_plot = function(year, Nfirst = 300){
     group_by(western) %>%
     mutate(Season_Rank = order(order(W.all, decreasing = T))) %>%
     inner_join(team_stats_year[,c(1,2,3,8,9)],by=c("Tm","TeamName"))
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
   p = WL_record %>%
     ggplot(aes(x = ConfRank, y = Season_Rank))+
     geom_point(aes(col = factor(western)),size = 2)+
     geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
     geom_abline(slope = 1,intercept = 0,linetype="dashed", color = "red",size = 2)+
     geom_hline(yintercept=8, linetype="dotted", color = "blue",size = 2)+
-    facet_grid(~western)+
+    facet_grid(~western, labeller = as_labeller(conference_names))+
     labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
     theme(plot.title = element_text(hjust = 0.5))+
     coord_fixed()+
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom")+
+    guides(colour=FALSE)+
+    xlab("Conference standing after 20 regular season games")+
+    ylab("Conference standing after all 82 regular season games")
   print(p)
   
   p2 = WL_record %>%
@@ -217,10 +230,13 @@ team_rank_plot = function(year, Nfirst = 300){
     geom_point(aes(col = factor(western)),size = 2)+
     geom_smooth(method = "lm")+ 
     geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
-    facet_grid(~western)+
+    facet_grid(~western, labeller = as_labeller(conference_names))+
     labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
     theme(plot.title = element_text(hjust = 0.5))+
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom")+
+    xlab("Number of wins in first 20 regular season games")+
+    ylab("Number of wins in all 82 regular season games")+
+    guides(colour=FALSE)
   print(p2)
 }
 
@@ -260,15 +276,20 @@ home_away_plot = function(year){
   standing_table_gather = standing_table %>%
     gather(stats,win,-c("Team","Wtot","Ltot","Tm","western"))
   standing_table_gather[,c(2,3,7)] = as.numeric(as.matrix(standing_table_gather[,c(2,3,7)]))
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
   p = standing_table_gather %>% 
     filter(stats %in% c("HomeW","AwayW")) %>%
     ggplot(aes(x = reorder(Tm,Wtot), y = win,fill= stats))+
     geom_bar(stat = "identity",position = "dodge")+
-    facet_grid(~western,scales="free_x")+
+    facet_grid(~western,scales="free_x", labeller = as_labeller(conference_names))+
     labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
     theme(plot.title = element_text(hjust = 0.5))+
     theme(legend.position = "bottom")+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))+
+    xlab("Teams")+
+    ylab("Number of wins")+
+    scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Away wins", "Home wins"))+
+    theme(legend.title = element_blank())
   print(p)
   
   team_factor_levels= standing_table_gather %>% 
@@ -284,7 +305,9 @@ home_away_plot = function(year){
     labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
     theme(plot.title = element_text(hjust = 0.5))+
     theme(legend.position = "bottom")+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))+
+    xlab("Teams")+
+    ylab("Number of wins")
   print(p2)
   
   
@@ -349,8 +372,8 @@ player_ws_plot = function(){
   year_list = c(2015:2019)
   ws_stats  = NULL
   for(i in 1: length(year_list)){
-      ws_tmp = get_ws_raw_data(year_list[i])
-      ws_stats = rbind(ws_stats, ws_tmp)
+    ws_tmp = get_ws_raw_data(year_list[i])
+    ws_stats = rbind(ws_stats, ws_tmp)
   }
   ws_stats = ws_stats %>% arrange(-WS)
   player_rank_list = unique(ws_stats$Player)
@@ -418,7 +441,7 @@ build_logit_model_year = function(train_year = 2018, test_year = 2019, firstN = 
   ## training accuracy
   
   print(confusionMatrix(factor(ifelse(logit_model$fitted.values>0.5,1,0)),
-                               factor(train_set$HomeWin)))
+                        factor(train_set$HomeWin)))
   
   ## testing accuracy
   pred_win_prob = predict(logit_model,newdata = test_set, type = "response")
