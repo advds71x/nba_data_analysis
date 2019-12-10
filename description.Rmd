@@ -31,6 +31,18 @@ We will undergo a comprehensive background study of the NBA to manually decide o
 
 ### Playoff Prediction 
 https://projects.fivethirtyeight.com/2020-nba-predictions/
+Fivethirtyeight runs NBA predictions based on a play-based stastics RAPTOR (Robust Algorithm (using) Player Tracking (and) On/Off Ratings).
+The main idea of the prediction method is that each team is judged according to the current level of talent of its players and how much that talent is expected to play going forward.
+
+* The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and a defensive rating for each player based on the RAPTOR metric, which uses statistics including player tracking metrics and plus/minus data. The ratings are updated throughout the season.
+* Each player has a estimated playing-time for each game based on his own history and the record of his similar comparables, taking into account of injuries and rest days. 
+* For a given lineup, they combine players' rating and playing-time into a team score on both sides. That score also accounts for home-court advantage fatigue, travel and altitude. The score are then converted into expected total points and winning probability.
+
+Limitations:
+* Many NBA superstars are uniquely outstanding and are hard find historical comparales. 
+* Requires too much information such as the roster of every game
+* Arbrary metric. For example, teams that played the previous day are given a penalty of 46 rating points. (Based on our analysis as presented below, fatigue does not have as much impact)
+
 
 ### Pair-comparison data
 Bradeley-Terry model
