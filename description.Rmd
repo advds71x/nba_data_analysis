@@ -164,6 +164,39 @@ head(game_stats_18to19)
 
 
 ## Exploratory Data Analysis
+```{r,warning=F,message=F}
+ 
+playoffplot <- WL_record %>%
+                ggplot(aes(x=W.all/(L.all+W.all),fill=Playoff,color=Playoff)) +
+                geom_histogram(position="identity",binwidth = 0.05)+
+                xlab ("W/L%") + ylab("Count (Teams)") + 
+                ggtitle("Win/Loss % Distribution") + 
+                facet_grid(~western, labeller = as_labeller(conference_names))
+
+# plots to see if FG, 2point, 3point are good indicators of W/L% 
+team_stats <- merge(team_stats,west_ind,by="Tm")
+FGplot <-  team_stats %>% 
+                ggplot(aes(x = `TeamFG%`, y=`OpponentFG%`))+
+                geom_point(aes(col = team_stats$`W/L%`))+
+                scale_color_gradient(low="red", high="green")+
+                facet_grid(~western, labeller = as_labeller(conference_names))+
+                labs(title = "Field Goal and total W/L%")
+p_2plot <-  team_stats %>% 
+        ggplot(aes(x = `Team2P%`, y=`Opponent2P%`))+
+        geom_point(aes(col = team_stats$`W/L%`))+
+        scale_color_gradient(low="red", high="green")+
+        facet_grid(~western, labeller = as_labeller(conference_names))+
+        labs(title = "2 points and total W/L%")
+p_3plot <-  team_stats %>% 
+        ggplot(aes(x = `Team3P%`, y=`Opponent3P%`))+
+        geom_point(aes(col = team_stats$`W/L%`))+
+        scale_color_gradient(low="red", high="green")+
+        facet_grid(~western, labeller = as_labeller(conference_names))+
+        labs(title = "3 points and total W/L%")
+```
+We did some explorartory data analysis to see which variables are good indicator of a team's performance that we may use in future feature engineering. First, we graphed the win/loss rate(%) for each play-off team and non play-off team. From the graph we can see that most play-off teams have a win/loss rate(%) of greater than 0.7 and we may consider it as a threshold when predicting whether a team can make it to playoff. We then explored the relationship of field goal, 2 points and 3 points with the final outcome. Field goal is a good indicator of win/loss rate(%) while we cannot see obvious pattern for 2 points and 3 points. Future feature engineering are needed to determine which variables are to include. 
+
+
 ### Team-level 
 ```{r,warning=F,message=F}
 WL_record_cal = function(game_schedule,WL_record){
