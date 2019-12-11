@@ -29,19 +29,66 @@ We will undergo a comprehensive background study of the NBA to manually decide o
 
 ## Related Work and Literature Review
 
+
+#Fivethirtyeight
+Three main approaches are used to forecast NBA results: modeling the scores of the two opposing teams, the difference of scores and the outcome (win-lose) of the game. The third approach is our primary interest since it directly determines the playoffs. 
+
+Fivethirtyeight runs NBA predictions based on a play-based statistics RAPTOR (Robust Algorithm (using) Player Tracking (and) On/Off Ratings).
+The Main idea of the prediction method is to judge each team according to the current level of talent of its players and how much that talent is expected to play going forward. The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and a defensive rating for each player based on the RAPTOR metric, which uses player tracking metrics and plus/minus data. The ratings are updated throughout the season. Each player also has an estimated playing-time for each game based on his own history and the record of his similar comparables. For a given lineup, they combine players' rating and playing-time into a team score on both sides. The team score also accounts for home-court advantage, fatigue, travel and altitude. The score is then converted into expected total points and winning probability.
+
+The method has three major Limitations:
+* Many NBA superstars are uniquely outstanding and are hard to find historical comparables. 
+* Requires too much information such as the roster of every game, which is difficult to obtain and is subject to change. 
+* Some of the metric are Arbrary For example, teams that played the previous day are given a penalty of 46 rating points. (Based on our analysis as presented below, fatigue does not have as much impact)
+
+Cattelan(2013) applies a dynamic Bradley–Terry (BT) model to predict the NBA 2009-2010 regular season. The model predicts a winning probability based on the ability of the home team and visiting team. A team’s ability at home is evolutionary and depends only on past matches played at home while the ability playing away depends on past game played away. The BT model provides a good framework for analyzing paired comparison data. However, there are two limitations:
+* The team ability statistic uses only information about the final result of the previous match
+* The model does not include player level statistics
+
+Cattelan inspires us to use the BT model framework for matching game prediction. We take a further look into the BT model and find several papers that compared the common methods used to model pairwise rank data. Thurstonian and Bradley–Terry models are the most commonly applied models in the analysis of paired comparison data. Handley (2001) argued that the BT formulation is more mathematically developed. Owing to its parsimony, it provides tractable maximum-likelihood estimators for scales, simultaneous confidence intervals and hypothesis tests for model fit, uniformity, and differences among populations of judges. Cattelan(2012) also compared two models and addressed some limitations to both of the models. For one thing, Bradley–Terry model requires that every comparison is performed once. When objects are specified using factors with a certain number of levels, the required sample size grows exponentially, while the number of parameters grows linearly as the number of factors increases. Thurstonian models appear particularly suitable to account for dependence between observations. However, this restriction does not apply to our study. 
+
+
+#Previous application of BT model on NBA prediction
+Cattelan(2013) applies a dynamic BT model to predict the NBA 2009-2010 regular season. The model predicts a winning probability based on the ability of the home team and visiting team. A team’s ability at home is evolutionary and depends only on past matches played at home while the ability playing away depends on past game played away. The BT model provides a good framework for analyzing paired comparison data. However, there are two limitations:
+* uses only information about the final result of the previous match
+* does not include player level statistics
+We will take use of the BT model but make it better adapted to predicting NBA games. 
+
+# Justifying BT model is good for our study
+Several papers compared the common methods used to model pairwise rank data. Thurstonian and Bradley–Terry models are the most commonly applied models in the analysis of paired comparison data. Handley (2001) argued that the BT formulation is more mathematically developed. Owing to its parsimony, it provides tractable maximum-likelihood estimators for scales, simultaneous confidence intervals and hypothesis tests for model fit, uniformity, and differences among populations of judges. Cattelan(2012) also compared two models and addressed some limitations to both of the models. For one thing, Bradley–Terry model requires that every comparison is performed once. When objects are specified using factors with a certain number of levels, the required sample size grows exponentially, while the number of parameters grows linearly as the number of factors increases. Thurstonian models appear particularly suitable to account for dependence between observations. However, this restriction does not apply to our study. 
+
+
+
+
+
+
+M Cattelan (2012), Models for Paired Comparison Data: A Review with Emphasis on Dependent Data, Statistical Science 2012, Vol. 27, No. 3, 412–433 DOI: 10.1214/12-STS396
+
+J. Handley (2001), Comparative Analysis of Bradley-Terry and Thurstone-Mosteller Paired Comparison Models for Image Quality Assessment, IS&T's 2001 PICS Conference Proceedings 
+Cattelan, M., Varin, C., & Firth, D. (2013). Dynamic Bradley–Terry modelling of sports tournaments. Journal of the Royal Statistical Society: Series C (Applied Statistics), 62(1), 135-150.
+
+
+
+
 ### Playoff Prediction 
 https://projects.fivethirtyeight.com/2020-nba-predictions/
 Fivethirtyeight runs NBA predictions based on a play-based stastics RAPTOR (Robust Algorithm (using) Player Tracking (and) On/Off Ratings).
-The main idea of the prediction method is that each team is judged according to the current level of talent of its players and how much that talent is expected to play going forward.
 
-* The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and a defensive rating for each player based on the RAPTOR metric, which uses statistics including player tracking metrics and plus/minus data. The ratings are updated throughout the season.
-* Each player has a estimated playing-time for each game based on his own history and the record of his similar comparables, taking into account of injuries and rest days. 
-* For a given lineup, they combine players' rating and playing-time into a team score on both sides. That score also accounts for home-court advantage fatigue, travel and altitude. The score are then converted into expected total points and winning probability.
+* Main idea of the prediction method: each team is judged according to the current level of talent of its players and how much that talent is expected to play going forward.
+
+* The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and a defensive rating for each player based on the RAPTOR metric, which uses player tracking metrics and plus/minus data. The ratings are updated throughout the season.
+
+* Each player has an estimated playing-time for each game based on his own history and the record of his similar comparables. It also takes into account of injuries and rest days. 
+
+* For a given lineup, they combine players' rating and playing-time into a team score on both sides. That score also accounts for home-court advantage, fatigue, travel and altitude. The score are then converted into expected total points and winning probability.
 
 Limitations:
 * Many NBA superstars are uniquely outstanding and are hard find historical comparales. 
-* Requires too much information such as the roster of every game
+* Requires too much information such as the roster of every game, which is difficult to obtain and is subject to change. 
 * Arbrary metric. For example, teams that played the previous day are given a penalty of 46 rating points. (Based on our analysis as presented below, fatigue does not have as much impact)
+
+https://www.teamrankings.com/nba-win-picks/
+
 
 
 ### Pair-comparison data

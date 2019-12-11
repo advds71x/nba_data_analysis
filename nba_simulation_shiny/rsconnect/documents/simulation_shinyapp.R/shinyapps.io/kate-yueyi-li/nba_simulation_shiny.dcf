@@ -1,0 +1,12 @@
+name: nba_simulation_shiny
+title: nba_simulation_shiny
+username:
+account: kate-yueyi-li
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1589562
+bundleId: 2659611
+url: https://kate-yueyi-li.shinyapps.io/nba_simulation_shiny/
+when: 1576085999.70356
+asMultiple: FALSE
+asStatic: FALSE
