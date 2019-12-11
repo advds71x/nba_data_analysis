@@ -52,7 +52,6 @@ team_stats = readr::read_csv("./data/team_stats_all.csv")
 game_stats = readr::read_csv("./data/game_stats_all.csv")
 head(team_stats)
 head(game_stats)
-
 ```
 
 We do not include the code for web scraping in this rmarkdown file. Instead, please refer to the `data_scraping.R` file in the source folder for more details. Here we just show the first few rows of the data. 
@@ -65,6 +64,8 @@ We list all 30 teams in the league (both full franchasise name and abbreviation)
 ```{r,warning=F,message=F}
 library(rvest)
 library(tidyverse)
+library(data.table)
+library(rowr)
 
 west_ind = data.frame(
   Tm = c("CHI","LAL","POR","WAS","CHO","MIL","BRK","DET","HOU","NOP","IND","MEM","DEN","LAC","ATL","NYK","MIA","ORL","DAL","PHO",
@@ -339,6 +340,141 @@ p2
 ```
 
 
+#### Winning streak effect
+```{r}
+team_multiple_game_data = function(year){
+  teams <- unique(game_stats$Visitor.Neutral)
+  game_after_streak <- list()
+  game_consecutive <- list()
+  
+  for (team in teams) {
+    ### wrangling team winning streak data
+    team_game_stats <- game_stats %>% filter(grepl(as.character(year-1), Season))
+    team_game_stats <- team_game_stats %>% filter(Visitor.Neutral == team | Home.Neutral == team)
+    team_game_stats <- team_game_stats[complete.cases(team_game_stats[, "PTS"]),]
+    # compute winning streaks
+    team_game_stats$isWin <- 0
+    team_game_stats[team_game_stats$Home.Neutral == team & (team_game_stats$PTS.1 > team_game_stats$PTS), "isWin"] = 1
+    team_game_stats[team_game_stats$Visitor.Neutral == team & (team_game_stats$PTS.1 < team_game_stats$PTS), "isWin"] = 1
+    team_game_stats$preGameWinStreak <- rowid(rleid(team_game_stats$isWin)) * team_game_stats$isWin
+    na.omit(setDT(team_game_stats)[, preGameWinStreak:=c(NA, preGameWinStreak[-.N])])
+    # compute losing streaks
+    team_game_stats$isLose <- 1 - team_game_stats$isWin
+    team_game_stats$preGameLoseStreak <- rowid(rleid(team_game_stats$isLose)) * team_game_stats$isLose
+    na.omit(setDT(team_game_stats)[, preGameLoseStreak:=c(NA, preGameLoseStreak[-.N])])
+    # overall streak
+    team_game_stats$streak <- paste0("W", team_game_stats$preGameWinStreak)
+    team_game_stats[team_game_stats$streak == "W0", "streak"] <- paste0("L", team_game_stats$preGameLoseStreak[team_game_stats$streak == "W0"])
+    # game results after streaks
+    game_after_streak[[team]] <- as.data.frame.matrix(table(team_game_stats$streak, team_game_stats$isWin))
+    
+    ### wrangling back-to-back game data
+    team_game_stats$GameDate <- as.Date(substring(team_game_stats$Date, 6), "%b %d, %Y")
+    team_game_stats$consecutive <- c(NA,diff(as.Date(team_game_stats$GameDate)) == 1)
+    # game results after back-to-back game
+    game_consecutive[[team]] <- as.data.frame.matrix(table(team_game_stats$consecutive, team_game_stats$isWin))
+  }
+  return(list("game_after_streak"=game_after_streak, "game_consecutive"=game_consecutive))
+  
+}
+
+team_multiple_game_data_2019 <- team_multiple_game_data(2019)
+
+
+
+# paired t-test for the difference between conditional and marginal probability
+condition_prob<-function(matrix){
+  con_prob=matrix[,"1"]/(matrix[,"1"]+matrix[,"0"])
+  return(con_prob)
+}
+
+marginal_prob<-function(matrix){
+  colSums(matrix)[2]/(colSums(matrix)[2]+colSums(matrix)[1])
+}
+
+con<-lapply(team_multiple_game_data_2019$game_after_streak,condition_prob)
+mar<-lapply(team_multiple_game_data_2019$game_after_streak, marginal_prob)
+
+ite<-1
+mar_rep<-NA
+for (i in mar){
+  mar_rep<-c(mar_rep,rep(i,length(con[[ite]])))
+  ite<-ite+1
+}
+
+mar_rep<-na.omit(mar_rep)
+con<-unlist(con)
+t.test(mar_rep,con,paired = T)
+
+#chi-square test for independence
+tests<-lapply(team_multiple_game_data_2019$game_after_streak, chisq.test)
+pval<-NA
+for (i in tests){
+  pval<-c(pval,i$p.value)
+}
+pval<-na.omit(pval)
+sum(pval<0.05)
+
+# merge winning streak data of all teams
+all_team_streaks <- bind_rows(team_multiple_game_data_2019$game_after_streak, .id = "team")
+all_team_streaks$Streak <- unlist(lapply(team_multiple_game_data_2019$game_after_streak, rownames))
+colnames(all_team_streaks)[2:3] <- c("lose","win")
+all_team_streaks$winProb <- all_team_streaks$win/(all_team_streaks$win + all_team_streaks$lose)
+
+# plot 
+all_team_streaks_plot <- all_team_streaks  %>% filter(Streak %in% c("L3","L2","L1","W1","W2","W3"))
+all_team_streaks_plot$Streak <- factor(all_team_streaks_plot$Streak,levels = c("L3","L2","L1","W1","W2","W3"))
+ggplot(data=all_team_streaks_plot, aes(x=Streak, y=winProb)) +
+  geom_boxplot(show.legend = F) +
+  labs(title = "Team Performances After Winning or Losing Streak") +
+  ylab("Winning percentage of game following a streak")
+
+
+
+
+
+
+
+
+
+
+# merge and plot back-to-back game data of all teams
+all_team_consecutive <- bind_rows(team_multiple_game_data_2019$game_consecutive, .id = "team")
+all_team_consecutive$consecutive <- unlist(lapply(team_multiple_game_data_2019$game_consecutive, rownames))
+colnames(all_team_consecutive)[2:3] <- c("lose","win")
+all_team_consecutive$winProb <- all_team_consecutive$win/(all_team_consecutive$win + all_team_consecutive$lose)
+ggplot(data=all_team_consecutive, aes(x=consecutive, y=winProb)) +
+  geom_boxplot(show.legend = F) 
+
+
+#paired t-test for the difference between conditional and marginal probability
+con <- lapply(team_multiple_game_data_2019$game_consecutive, condition_prob)
+mar <- lapply(team_multiple_game_data_2019$game_consecutive, marginal_prob)
+
+ite<-1
+mar_rep<-NA
+for (i in mar){
+  mar_rep<-c(mar_rep,rep(i,length(con[[ite]])))
+  ite<-ite+1
+}
+
+
+mar_rep<-na.omit(mar_rep)
+con<-unlist(con)
+t.test(mar_rep,con,paired = T)
+
+
+# chi-square test for independence
+tests<-lapply(team_multiple_game_data_2019$game_consecutive, chisq.test)
+pval<-NA
+for (i in tests){
+  pval<-c(pval,i$p.value)
+}
+pval<-na.omit(pval)
+sum(pval<0.05)
+```
+
+
 ### Player-level
 Basketball is a team sport, but the value of individual talent is not to be overlooked. Win shares is a metric that is designed to estimate an individual player's contribution to the team in terms of wins. We identify the win shares of the player with the most win shares on each team. We can see that teams that have a dominant player tend to perform better.
 
@@ -432,7 +568,7 @@ player_ws_plot = function(){
     theme(legend.position = "none")+
     theme(axis.text.x = element_text(angle = 90, hjust = 1))+
     ylab("Win shares rank")+
-     labs(title = "Players with High Win Shares")
+    labs(title = "Players with High Win Shares")
   print(p)
 }
 player_ws_plot()
