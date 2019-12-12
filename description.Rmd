@@ -18,27 +18,30 @@ permalink: /description
 knitr::opts_chunk$set(echo = T,warning=F, message=F)
 ```
 
-
-## Introduction 
-This is the rmarkdown file for our final project. 
-
 ## Motivation and Overview
-The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. As NBA fans ourselves, we thought it would be interesting to predict the NBA playoff teams for this season. The target audience are NBA fans all over the world. 
+The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. During the regular season, each of the 30 teams (15 in the Eastern Conference and 15 in the Western Conference) plays 82 games. At the conclusion of the regular season, the top eight teams in each conference advance to the playoffs for a chance to compete for the championship title. Towards the end of the regular season, the race for the final few playoff spots is very intense, and usually it isn't until the final game of the regular season is over when we know which teams have made the cut. As NBA fans ourselves, we are eager to find out which teams will make the playoffs this year (2019-20 NBA season), but rather than wait until next April, as data analysts, we thought it would be interesting if we could make such predictions now. We hope our analysis will lead to meaningful insights that will be of interest to NBA fans all over the world. 
 
 ## Project Objectives
-The goal of this project is to build a machine learning model that can predict the winning percentages of the NBA teams in the Western Conference, and thus the playoff teams. 
+The goal of this project is to build a statiscial machine learning model that can predict the winning percentages of the NBA teams in the Western Conference, and thus the playoff teams (the eight teams with the highest winning percentages). In addition to overall winning percentages, we will also provide predicted winning percentages for home games and for away games for each team.
 
-We would like to learn more about feature engineering and machine learning models. We will undergo a comprehensive background study of NBA to manually decide what features to use. Then feature learning techniques will be applied. We also plan to evaluate different models. A successful model will predict the 2019-2020 NBA playoffs in the Western Conference. Ideally the model could also be trained to predict the playoff teams in the Eastern Conference and finally round-by-round playoff predictions.
-
-Some optional features we can consider include predictions of winning percentages for home games and for away games for each team.
-
-
+We will undergo a comprehensive background study of the NBA to manually decide on what features to use. Then feature learning techniques will be applied. We also plan to evaluate different models. A successful model will predict the 2019-2020 NBA playoffs in the Western Conference. Ideally, the model could also be trained to predict the playoff teams in the Eastern Conference and finally round-by-round playoff predictions.
 
 
 ## Related Work and Literature Review
 
 ### Playoff Prediction 
 https://projects.fivethirtyeight.com/2020-nba-predictions/
+Fivethirtyeight runs NBA predictions based on a play-based stastics RAPTOR (Robust Algorithm (using) Player Tracking (and) On/Off Ratings).
+The main idea of the prediction method is that each team is judged according to the current level of talent of its players and how much that talent is expected to play going forward.
+
+* The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and a defensive rating for each player based on the RAPTOR metric, which uses statistics including player tracking metrics and plus/minus data. The ratings are updated throughout the season.
+* Each player has a estimated playing-time for each game based on his own history and the record of his similar comparables, taking into account of injuries and rest days. 
+* For a given lineup, they combine players' rating and playing-time into a team score on both sides. That score also accounts for home-court advantage fatigue, travel and altitude. The score are then converted into expected total points and winning probability.
+
+Limitations:
+* Many NBA superstars are uniquely outstanding and are hard find historical comparales. 
+* Requires too much information such as the roster of every game
+* Arbrary metric. For example, teams that played the previous day are given a penalty of 46 rating points. (Based on our analysis as presented below, fatigue does not have as much impact)
 
 ### Pair-comparison data
 Bradeley-Terry model
@@ -46,14 +49,14 @@ Bradeley-Terry model
 ## Data 
 
 ### Data Source
-The data will be collected from Basketball Reference website. The database contains player statistics since 1946, including points per game, assists per game, rebounds per game, etc,. The database also provides team statistics, including 3 point percentages, winning percentages, etc,. 
+All data were collected from the Basketball Reference website (https://www.basketball-reference.com/). The database contains player statistics including points per game, assists per game, rebounds per game, etc. of all players who have played in the NBA league since 1949-50 (the inaugural season of the NBA). The database also provides team statistics, including team 3-point percentages, winning percentages, etc.
 
 ### Data Scraping 
 We used `rvest` package to scrape the following data from Basketball Reference website:
 
-* `team_stats`: The team statistics of first 20 games from season 2016-17 to 2019-20. We would use these data to define the team performance during specific season in the feature engineering section.
+* `team_stats`: The team statistics of first 20 games from season 2015-16 to 2019-20. We would use these data to define the team performance during specific season in the feature engineering section.
 
-* `game_stats`: The game results (W-L record and scores) for each of the remaining 62 games from season 2016-17 to 2018-19. We would use these data in the mode building section. 
+* `game_stats`: The game results (W-L record and scores) for each of the remaining 62 games from season 2015-16 to 2018-19. We would use these data in the mode building section. 
 
 ```{r,warning=F,message=F}
 team_stats = readr::read_csv("./data/team_stats_all.csv")
@@ -63,11 +66,12 @@ head(game_stats)
 
 ```
 
-We did not include the code for web scraping in this rmarkdown file in order to save the runtime. You can check the `data_scraping.R` file in the source folder for more details. Here we just showed the first few rows of the data. 
+We do not include the code for web scraping in this rmarkdown file. Instead, please refer to the data_scraping.R file in the source folder for more details. Here we just show the first few rows of the data.
 
 ### Data Wrangling
-Data wrangling would be performed throughout the whole data analysis process covering data tidying, EDA, feature engineering, and model building. Here we demonstrated some necessary data wrangling procedures which were prepared for further analysis. 
+Data wrangling is performed throughout the whole data analysis process covering data tidying, exploratory data analysis, feature engineering, and model building. Here we demonstrate some necessary data wrangling procedures performed to prepare the dataset for further analysis.
 
+We list all 30 teams in the league (both full franchasise name and abbreviation), and add an indicator to differentiate the 15 teams in the Western Conference and the 15 in the Eastern Conference.
 ```{r,warning=F,message=F}
 library(rvest)
 library(tidyverse)
@@ -83,7 +87,13 @@ west_ind = data.frame(
                "Sacramento Kings","Utah Jazz", "Minnesota Timberwolves","San Antonio Spurs","Cleveland Cavaliers",
                "Toronto Raptors" ,"Boston Celtics","Philadelphia 76ers" ,"Golden State Warriors","Oklahoma City Thunder")
 )
+```
 
+We obtain the win shares stats (estimate of the number of wins contributed by a player) of the players ranked in the top 100 of the league in terms of win shares (WS) in a particular season. We then identify the win shares of the player with the highest win shares on each team. For example, in the 2017-18 season, the Dallas Mavericks (DAL) team had two players ranked in the top 100 in terms of WS: Dwight Powell (WS 6.6) and Dirk Nowitzki (WS 4.8). The highest win shares of the Dallas Mavericks team is thus 6.6.
+
+- get_injury_data(year) : obtain the [severe player injuries](https://www.spotrac.com/nba/injured-reserve/),sorted by "cash earned during injury" 
+- get_ws_injury_trans_data(year): obtain the winshare data considering player injuries and team transfer. 
+```{r}
 get_ws_data = function(year){
   ws_url = paste0("https://www.basketball-reference.com/play-index/psl_finder.cgi?request=1&match=single&type=totals&per_minute_base=36&per_poss_base=100&season_start=1&season_end=-1&lg_id=NBA&age_min=0&age_max=99&is_playoffs=N&height_min=0&height_max=99&year_min=",
                   year,"&year_max=",year,"&birth_country_is=Y&as_comp=gt&as_val=0&pos_is_g=Y&pos_is_gf=Y&pos_is_f=Y&pos_is_fg=Y&pos_is_fc=Y&pos_is_c=Y&pos_is_cf=Y&order_by=ws")
@@ -95,14 +105,78 @@ get_ws_data = function(year){
   ws_stats = ws_stats[-c(1,which(ws_stats$Player=='Player')),]
   ws_stats$WS = as.numeric(ws_stats$WS )
   ws_stats_summary = ws_stats %>%
-    group_by(Tm) %>%
-    summarise(WS = max(WS))
+    group_by(Tm,Player) %>%
+    summarise(WS_max = max(WS), WS_num = n()) 
+  
   return(ws_stats_summary)
 }
-WinShare = get_ws_data(2018)
-head(WinShare)
 
 
+get_injury_data = function(year){
+  injury_url = paste0("https://www.spotrac.com/nba/injured-reserve/",
+                    year-1)
+  injury_stats = injury_url %>% 
+    read_html %>%
+    html_table() %>%
+    .[[4]]
+  
+  colnames(injury_stats)[1] = "Player"
+  
+  injury_stats = injury_stats %>%
+    separate(Player,sep="\n",into = c("Player","other")) %>%
+    mutate(Games = as.numeric(Games),
+           Salary = as.numeric(gsub('[$,]', '', injury_stats$`Cash EarnedWhile Injured`))) %>%
+    select(Player,Team,Games,Salary) %>%
+    filter(Games!='NA') %>%
+    mutate(Season = paste0(year-1,'-',substr(year,3,4)))
+  return(injury_stats)
+}
+
+injury_2020 = get_injury_data(2016)
+
+combine_injury_data = function(){
+  year_list = c(2017:2020)
+  injury_stats = NULL
+  for(i in 1:length(year_list)){
+    injury_stats_tmp = get_injury_data(year_list[i])
+    injury_stats = rbind(injury_stats, injury_stats_tmp)
+  }
+  return(injury_stats)
+}
+
+
+injury_stats = combine_injury_data()
+
+get_ws_injury_trans_data = function(year){
+  Winshare_last_year = get_ws_data(year-1)
+  Winshare_this_year = get_ws_data(year)
+  injury_year = get_injury_data(year)
+  
+  winshare_injury_ind = Winshare_this_year %>%
+    left_join(injury_year, by = c("Player","Tm"="Team")) %>%
+    mutate(injury_ind = ifelse(is.na(Season),0,1))
+  winshare_this_year_injury_trans = winshare_injury_ind %>%
+    right_join(Winshare_last_year, by = c("Player")) %>%
+    select(Tm.x,Player,Tm.y,WS_max.y,WS_num.y) %>% 
+    ungroup() %>% na.omit() %>%
+    group_by(Tm.x) %>%
+    summarise(WS_max = max(WS_max.y), WS_num = n(),Player = Player[which.max(WS_max.y)]) 
+  colnames(winshare_this_year_injury_trans)[1]='Tm'
+  return(winshare_this_year_injury_trans)
+  
+  
+}
+winshare_feature = get_ws_injury_trans_data(2020)
+head(winshare_feature)
+
+```
+
+
+We create a function that organizes team data in the first 20 games for all teams in a particular season. This process includes extracting from a larger database relevant variables which include number of wins, number of losses, winning percentages, total points scored by team, and total points scored by opponents. We also append conference ranking of each team at the end of the first 20 games to the data by ranking the winning percentages.
+
+
+
+```{r}
 get_team_year_feature = function(year){
   
   #team_stats = get_team_stats() # get the team stats for all seasons
@@ -113,7 +187,7 @@ get_team_year_feature = function(year){
   
   ## select Win, Loss, Win-Loss per, Team points, Opponent points
   team_stats_year_feature = team_stats_year %>%
-    select(Tm, W, L, `W/L%`, TeamPTS, OpponentPTS) %>%
+    select(Tm, W, L, `W/L%`, TeamPTS, OpponentPTS,TeamTRB,TeamAST,TeamSTL,TeamBLK, TeamTOV,TeamPF) %>%
     inner_join(west_ind, by = 'Tm')
   
   ## assign the team rank
@@ -122,10 +196,13 @@ get_team_year_feature = function(year){
     mutate(ConfRank = order(order(W, TeamPTS, decreasing = T)))
   
   ## add the winshare feature from previous season
-  Winshare  = get_ws_data(year-1)
-  team_stats_year_rank = team_stats_year_rank %>% left_join(WinShare, by = 'Tm')
-  team_stats_year_rank$WS[is.na(team_stats_year_rank$WS)] = 0
-  
+  Winshare  = get_ws_injury_trans_data(year)
+  #print(head(Winshare))
+  team_stats_year_rank = team_stats_year_rank %>% left_join(Winshare, by = 'Tm') %>%
+    select(-Player)
+  team_stats_year_rank$WS_num[is.na(team_stats_year_rank$WS_num)] = 0
+  team_stats_year_rank$WS_max[is.na(team_stats_year_rank$WS_max)] = 0
+
   return(team_stats_year_rank)
   
 }
@@ -133,6 +210,10 @@ get_team_year_feature = function(year){
 team_stats_18to19 = get_team_year_feature(2019)
 head(team_stats_18to19)
 
+```
+
+We also create a function that organizes data of all regular season games in a particular season. This process includes extracting from a larger database relevant variables which include date of game, name of home team and visiting team, and points scored by home team and visiting team. We also append an indicator variable indicating whether the game was won by the home team by comparing points scored by home team and visiting team.
+```{r}
 get_game_year_feature = function(year){
   game_stats_year = game_stats %>% 
     filter(grepl(as.character(year-1),Season))
@@ -152,7 +233,86 @@ head(game_stats_18to19)
 
 
 ## Exploratory Data Analysis
+
+```{r,warning=F,message=F, eval=F}
+WL_record = cbind(west_ind,W = 0, L=0)
+WL_record  = rbind(WL_record_cal(get_game_year_feature(2019),WL_record),WL_record_cal(get_game_year_feature(2018),WL_record),
+                   WL_record_cal(get_game_year_feature(2017),WL_record),WL_record_cal(get_game_year_feature(2016),WL_record))
+colnames(WL_record)[c(4,5)] = c("W.all","L.all")
+WL_record = WL_record %>%
+        group_by(western) %>%
+        mutate(Season_Rank = order(order(W.all, decreasing = T)))
+WL_record = WL_record %>%
+        mutate(Playoff = Season_Rank <= 8)
+conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
+playoffplot <- WL_record %>%
+                ggplot(aes(x=W.all/(L.all+W.all),fill=Playoff,color=Playoff)) +
+                geom_histogram(position="identity",binwidth = 0.05)+
+                xlab ("W/L%") + ylab("Count (Teams)") + 
+                ggtitle("Win/Loss % Distribution") + 
+                facet_grid(~western, labeller = as_labeller(conference_names))
+playoffplot
+
+# plots to see if FG, 2point, 3point are good indicators of W/L% 
+team_stats <- merge(team_stats,west_ind,by="Tm")
+FGplot <-  team_stats %>% 
+                ggplot(aes(x = `TeamFG%`, y=`OpponentFG%`))+
+                geom_point(aes(col = team_stats$`W/L%`))+
+                scale_color_gradient(low="red", high="green")+
+                facet_grid(~western, labeller = as_labeller(conference_names))+
+                labs(title = "Field Goal and total W/L%")
+FGplot
+
+p_2plot <-  team_stats %>% 
+        ggplot(aes(x = `Team2P%`, y=`Opponent2P%`))+
+        geom_point(aes(col = team_stats$`W/L%`))+
+        scale_color_gradient(low="red", high="green")+
+        facet_grid(~western, labeller = as_labeller(conference_names))+
+        labs(title = "2 points and total W/L%")
+
+p_2plot 
+
+p_3plot <-  team_stats %>% 
+        ggplot(aes(x = `Team3P%`, y=`Opponent3P%`))+
+        geom_point(aes(col = team_stats$`W/L%`))+
+        scale_color_gradient(low="red", high="green")+
+        facet_grid(~western, labeller = as_labeller(conference_names))+
+        labs(title = "3 points and total W/L%")
+p_3plot
+```
+We did some explorartory data analysis to see which variables are good indicator of a team's performance that we may use in future feature engineering. First, we graphed the win/loss rate(%) for each play-off team and non play-off team. From the graph we can see that most play-off teams have a win/loss rate(%) of greater than 0.7 and we may consider it as a threshold when predicting whether a team can make it to playoff. We then explored the relationship of field goal, 2 points and 3 points with the final outcome. Field goal is a good indicator of win/loss rate(%) while we cannot see obvious pattern for 2 points and 3 points. Future feature engineering are needed to determine which variables are to include. 
+
+
 ### Team-level 
+We compared team points per game and opponent points per game of all teams by conference, and explored how these stats were related to conference standings. In general, a team that is strong in offense will have a relatively high team score per game, and a team that is strong in defense will have a relatively low opponent score per game. From the plot below, we can see that some highly ranked teams are strong both offensively and defensively (e.g. TOR), while some teams make up for their weaker offense through strong defense (e.g. IND). Thus, team points or opponent points alone may not be sufficient to quantify the strength of a team, but the use of both stats or the net score (team points - opponent points) may be more appropriate.
+
+
+```{r}
+team_def_off_plot = function(year){
+  team_stats_year = get_team_year_feature(year)
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
+  p = team_stats_year %>% 
+    ggplot(aes(x = TeamPTS/20, y = OpponentPTS/20))+
+    geom_point(aes(size = -ConfRank, col = factor(western)))+
+    geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
+    geom_abline(slope = 1,intercept = 0,linetype="dashed", color = "red",size = 1)+
+    facet_grid(~western, labeller = as_labeller(conference_names))+
+    labs(title = paste0('Points Scored in First 20 games (Season ',year-1,'-',substr(year,3,4),")"))+
+    theme(plot.title = element_text(hjust = 0.5))+
+    coord_fixed()+
+    theme(legend.position = "bottom") +
+    guides(colour=FALSE) +
+    scale_size("Conference standing after 20 games",breaks=c(-15,-10,-5),labels=c(15,10,5))+
+    xlab("Team Points (average per game)")+
+    ylab("Opponent Points (average per game)")
+  print(p)
+}
+#png("./plots/team_def_off_plot.png",width = 960,height = 480)
+team_def_off_plot(2019)
+#dev.off()
+```
+
+We next explored how the standings and W-L records of teams after 20 regular games compared to the final standings and records at the end of the regular season. The plots of conference standings show that many teams that performed well in the beginning of the regular season continued to perform well throughout the season (e.g. GSW & DEN), while some teams that were not faring well earlier on finished the season strong (e.g. HOU & UTA), and still other teams that were in the top 8 after 20 regular season games did not make it to the playoffs in the end (e.g. MEM & LAL). In the team records plot, the line shows the expected number of regular season wins if teams were to maintain the same first-20-game-winning-percentage throughout the regular season. The bandwidth represents the 95% confidence interval for predictions of regular season wins. We can see that while some teams had a consistent performance throughout the season (e.g. MIN & OKC), other teams had better (e.g. HOU) or worse (e.g. MEM) performance in the remaining 62 games. Thus, we learn that even if a team starts the season poorly, there is still an oppurtunity for the team to improve and ultimately reach the playoffs.
 ```{r,warning=F,message=F}
 WL_record_cal = function(game_schedule,WL_record){
   for(i in 1:nrow(game_schedule)){
@@ -173,24 +333,6 @@ WL_record_cal = function(game_schedule,WL_record){
   return(WL_record)
 }
 
-team_def_off_plot = function(year){
-  team_stats_year = get_team_year_feature(year)
-  p = team_stats_year %>% 
-    ggplot(aes(x = TeamPTS/20, y = OpponentPTS/20))+
-    geom_point(aes(size = -ConfRank, col = factor(western)))+
-    geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
-    geom_abline(slope = 1,intercept = 0,linetype="dashed", color = "red",size = 2)+
-    facet_grid(~western)+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
-    theme(plot.title = element_text(hjust = 0.5))+
-    coord_fixed()+
-    theme(legend.position = "bottom")
-  print(p)
-}
-team_def_off_plot(2019)
-```
-
-```{r,warning=F,message=F}
 team_rank_plot = function(year, Nfirst = 300){
   team_stats_year = get_team_year_feature(year)
   game_stats_year = get_game_year_feature(year)
@@ -202,38 +344,56 @@ team_rank_plot = function(year, Nfirst = 300){
   WL_record = WL_record %>%
     group_by(western) %>%
     mutate(Season_Rank = order(order(W.all, decreasing = T))) %>%
-    inner_join(team_stats_year[,c(1,2,3,8,9)],by=c("Tm","TeamName"))
+    inner_join(team_stats_year[,c(1,2,3,14,15)],by=c("Tm","TeamName"))
+  WL_record = WL_record %>%
+    mutate(Playoff = Season_Rank <= 8)
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
   p = WL_record %>%
     ggplot(aes(x = ConfRank, y = Season_Rank))+
-    geom_point(aes(col = factor(western)),size = 2)+
+    geom_point(aes(col = factor(western), size = factor(Playoff)))+
     geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
-    geom_abline(slope = 1,intercept = 0,linetype="dashed", color = "red",size = 2)+
-    geom_hline(yintercept=8, linetype="dotted", color = "blue",size = 2)+
-    facet_grid(~western)+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
+    geom_abline(slope = 1,intercept = 0,linetype="dashed", color = "red",size = 1)+
+    geom_vline(xintercept=8, linetype="dotted", color = "blue",size = 1)+
+    facet_grid(~western, labeller = as_labeller(conference_names))+
+    labs(title = paste0('Conference Standings (Season ',year-1,'-',substr(year,3,4),")"))+
     theme(plot.title = element_text(hjust = 0.5))+
     coord_fixed()+
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom")+
+    xlab("Conference standing after 20 regular season games")+
+    ylab("Final conference standing after all 82 regular season games")+
+    guides(colour=FALSE, size=guide_legend(title="Playoff team"))+    
+    scale_size_discrete(range = c(1.5, 4))
   print(p)
   
   p2 = WL_record %>%
     ggplot(aes(x = W.pre, y =W.all))+
-    geom_point(aes(col = factor(western)),size = 2)+
+    geom_point(aes(col = factor(western),size = factor(Playoff)))+
     geom_smooth(method = "lm")+ 
     geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
-    facet_grid(~western)+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
+    facet_grid(~western, labeller = as_labeller(conference_names))+
+    labs(title = paste0('Team Records (Season ',year-1,'-',substr(year,3,4),")"))+
     theme(plot.title = element_text(hjust = 0.5))+
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom")+
+    xlab("Number of wins in first 20 regular season games")+
+    ylab("Number of wins in all 82 regular season games")+
+    guides(colour=FALSE, size=guide_legend(title="Playoff team"))+
+    scale_size_discrete(range = c(1.5, 4))
   print(p2)
 }
+#png("./plots/team_rank_plot.png",width = 960,height = 480)
+#team_rank_plot(2019)
+#dev.off()
 
+#png("./plots/team_win_plot.png",width = 960,height = 480)
 team_rank_plot(2019)
+#dev.off()
 ```
 
 ### Specific effect
-#### Home-effect
-#### Western-Eastern effect
+#### Home-court advantage
+The NBA regular season consists of each team playing 82 games, 41 at home and 41 away. We examined home and away records of teams to better understand home-court advantage in the NBA. We can see that most teams have a better record playing at home with a few exceptions (i.e. CHI & MIA). The home-court advantage is more prominent for some teams (e.g. DEN & SAS) while mattering less for other teams (e.g. GSW & OKC).
+
+
 ```{r}
 home_away_plot = function(year){
   game_stats_year = get_game_year_feature(year)
@@ -264,15 +424,20 @@ home_away_plot = function(year){
   standing_table_gather = standing_table %>%
     gather(stats,win,-c("Team","Wtot","Ltot","Tm","western"))
   standing_table_gather[,c(2,3,7)] = as.numeric(as.matrix(standing_table_gather[,c(2,3,7)]))
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
   p = standing_table_gather %>% 
     filter(stats %in% c("HomeW","AwayW")) %>%
     ggplot(aes(x = reorder(Tm,Wtot), y = win,fill= stats))+
     geom_bar(stat = "identity",position = "dodge")+
-    facet_grid(~western,scales="free_x")+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
+    facet_grid(~western,scales="free_x", labeller = as_labeller(conference_names))+
+    labs(title = paste0('Team Records (Season ',year-1,'-',substr(year,3,4),")"))+
     theme(plot.title = element_text(hjust = 0.5))+
     theme(legend.position = "bottom")+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))+
+    xlab("Teams")+
+    ylab("Number of wins")+
+    scale_fill_manual(values = c("#F8766D", "#00BFC4"), labels = c("Away wins", "Home wins"))+
+    theme(legend.title = element_blank())
   print(p)
   
   team_factor_levels= standing_table_gather %>% 
@@ -285,20 +450,173 @@ home_away_plot = function(year){
     filter(western==1 & stats %in% c('EastW','EastL') | western==0 & stats %in% c('WestW','WestL')) %>%
     ggplot(aes(x =Tm, y = win,fill= stats))+
     geom_bar(stat = "identity")+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
+    labs(title = paste0('Team Records (Season ',year-1,'-',substr(year,3,4),")"))+
     theme(plot.title = element_text(hjust = 0.5))+
     theme(legend.position = "bottom")+
-    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
-  print(p2)
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5))+
+    xlab("Teams")+
+    ylab("Number of games")
   
+  return(p)
+}
+
+p2 <- home_away_plot(2019)
+#png("./plots/home_away.png",width = 960,height = 480)
+#p2
+#dev.off()
+```
+
+#### Western-Eastern effect
+```{r}
+#png("./plots/west_east.png",width = 960,height = 480)
+#p2
+#dev.off()
+p2
+```
+
+#### Winning streak effect
+```{r}
+library(data.table)
+library(rowr)
+
+team_multiple_game_data = function(year){
+  teams <- unique(game_stats$Visitor.Neutral)
+  game_after_streak <- list()
+  game_consecutive <- list()
+  
+  for (team in teams) {
+    ### wrangling team winning streak data
+    team_game_stats <- game_stats %>% filter(grepl(as.character(year-1), Season))
+    team_game_stats <- team_game_stats %>% filter(Visitor.Neutral == team | Home.Neutral == team)
+    team_game_stats <- team_game_stats[complete.cases(team_game_stats[, "PTS"]),]
+    # compute winning streaks
+    team_game_stats$isWin <- 0
+    team_game_stats[team_game_stats$Home.Neutral == team & (team_game_stats$PTS.1 > team_game_stats$PTS), "isWin"] = 1
+    team_game_stats[team_game_stats$Visitor.Neutral == team & (team_game_stats$PTS.1 < team_game_stats$PTS), "isWin"] = 1
+    team_game_stats$preGameWinStreak <- rowid(rleid(team_game_stats$isWin)) * team_game_stats$isWin
+    na.omit(setDT(team_game_stats)[, preGameWinStreak:=c(NA, preGameWinStreak[-.N])])
+    # compute losing streaks
+    team_game_stats$isLose <- 1 - team_game_stats$isWin
+    team_game_stats$preGameLoseStreak <- rowid(rleid(team_game_stats$isLose)) * team_game_stats$isLose
+    na.omit(setDT(team_game_stats)[, preGameLoseStreak:=c(NA, preGameLoseStreak[-.N])])
+    # overall streak
+    team_game_stats$streak <- paste0("W", team_game_stats$preGameWinStreak)
+    team_game_stats[team_game_stats$streak == "W0", "streak"] <- paste0("L", team_game_stats$preGameLoseStreak[team_game_stats$streak == "W0"])
+    # game results after streaks
+    game_after_streak[[team]] <- as.data.frame.matrix(table(team_game_stats$streak, team_game_stats$isWin))
+    
+    ### wrangling back-to-back game data
+    team_game_stats$GameDate <- as.Date(substring(team_game_stats$Date, 6), "%b %d, %Y")
+    team_game_stats$consecutive <- c(NA,diff(as.Date(team_game_stats$GameDate)) == 1)
+    # game results after back-to-back game
+    game_consecutive[[team]] <- as.data.frame.matrix(table(team_game_stats$consecutive, team_game_stats$isWin))
+  }
+  return(list("game_after_streak"=game_after_streak, "game_consecutive"=game_consecutive))
   
 }
 
-home_away_plot(2019)
+team_multiple_game_data_2019 <- team_multiple_game_data(2019)
+
+
+
+# paired t-test for the difference between conditional and marginal probability
+condition_prob<-function(matrix){
+  con_prob=matrix[,"1"]/(matrix[,"1"]+matrix[,"0"])
+  return(con_prob)
+}
+
+marginal_prob<-function(matrix){
+  colSums(matrix)[2]/(colSums(matrix)[2]+colSums(matrix)[1])
+}
+
+con<-lapply(team_multiple_game_data_2019$game_after_streak,condition_prob)
+mar<-lapply(team_multiple_game_data_2019$game_after_streak, marginal_prob)
+
+ite<-1
+mar_rep<-NA
+for (i in mar){
+  mar_rep<-c(mar_rep,rep(i,length(con[[ite]])))
+  ite<-ite+1
+}
+
+mar_rep<-na.omit(mar_rep)
+con<-unlist(con)
+t.test(mar_rep,con,paired = T)
+
+#chi-square test for independence
+tests<-lapply(team_multiple_game_data_2019$game_after_streak, chisq.test)
+pval<-NA
+for (i in tests){
+  pval<-c(pval,i$p.value)
+}
+pval<-na.omit(pval)
+sum(pval<0.05)
+
+# merge winning streak data of all teams
+all_team_streaks <- bind_rows(team_multiple_game_data_2019$game_after_streak, .id = "team")
+all_team_streaks$Streak <- unlist(lapply(team_multiple_game_data_2019$game_after_streak, rownames))
+colnames(all_team_streaks)[2:3] <- c("lose","win")
+all_team_streaks$winProb <- all_team_streaks$win/(all_team_streaks$win + all_team_streaks$lose)
+
+# plot 
+all_team_streaks_plot <- all_team_streaks  %>% filter(Streak %in% c("L3","L2","L1","W1","W2","W3"))
+all_team_streaks_plot$Streak <- factor(all_team_streaks_plot$Streak,levels = c("L3","L2","L1","W1","W2","W3"))
+ggplot(data=all_team_streaks_plot, aes(x=Streak, y=winProb)) +
+  geom_boxplot(show.legend = F) +
+  labs(title = "Team Performances After Winning or Losing Streak") +
+  ylab("Winning percentage of game following a streak")
+
+
+
+
+
+
+
+
+
+
+# merge and plot back-to-back game data of all teams
+all_team_consecutive <- bind_rows(team_multiple_game_data_2019$game_consecutive, .id = "team")
+all_team_consecutive$consecutive <- unlist(lapply(team_multiple_game_data_2019$game_consecutive, rownames))
+colnames(all_team_consecutive)[2:3] <- c("lose","win")
+all_team_consecutive$winProb <- all_team_consecutive$win/(all_team_consecutive$win + all_team_consecutive$lose)
+ggplot(data=all_team_consecutive, aes(x=consecutive, y=winProb)) +
+  geom_boxplot(show.legend = F) 
+
+
+#paired t-test for the difference between conditional and marginal probability
+con <- lapply(team_multiple_game_data_2019$game_consecutive, condition_prob)
+mar <- lapply(team_multiple_game_data_2019$game_consecutive, marginal_prob)
+
+ite<-1
+mar_rep<-NA
+for (i in mar){
+  mar_rep<-c(mar_rep,rep(i,length(con[[ite]])))
+  ite<-ite+1
+}
+
+
+mar_rep<-na.omit(mar_rep)
+con<-unlist(con)
+t.test(mar_rep,con,paired = T)
+
+
+# chi-square test for independence
+tests<-lapply(team_multiple_game_data_2019$game_consecutive, chisq.test)
+pval<-NA
+for (i in tests){
+  pval<-c(pval,i$p.value)
+}
+pval<-na.omit(pval)
+sum(pval<0.05)
 ```
 
 
+
+
 ### Player-level
+
+Basketball is a team sport, but the value of individual talent is not to be overlooked. Win shares is a metric that is designed to estimate an individual player's contribution to the team in terms of wins. We identify the win shares of the player with the most win shares on each team. We can see that teams that have a dominant player tend to perform better.
 ```{r}
 team_ws_plot = function(year){
   team_stats_year = get_team_year_feature(year)
@@ -311,25 +629,46 @@ team_ws_plot = function(year){
   WL_record = WL_record %>%
     group_by(western) %>%
     mutate(Season_Rank = order(order(W.all, decreasing = T))) %>%
-    inner_join(team_stats_year[,c(1,2,3,8,9)],by=c("Tm","TeamName"))
+    inner_join(team_stats_year[,c(1,2,3,14,15)],by=c("Tm","TeamName"))
   
   
-  WinShare = get_ws_data(year)
+ Winshare_feature = get_ws_injury_trans_data(year)
   WL_record_ws = WL_record %>%
-    inner_join(WinShare, by='Tm')
+    inner_join(Winshare_feature, by='Tm')
+  conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
   
+  WL_record_ws <- WL_record_ws %>% 
+    group_by(western) %>%
+    ungroup() %>%
+    arrange(western, desc(Season_Rank)) %>%
+    mutate(order = row_number())
   p = WL_record_ws %>%
-    ggplot(aes(x = WS, y = Season_Rank))+
-    geom_point(aes(col = factor(western)),size = 2)+
-    geom_text(aes(label=Tm),vjust = 0, nudge_y = 0.5)+
-    facet_grid(~western)+
-    labs(title = paste0('Season ',year-1,'-',substr(year,3,4)))+
+    ggplot(aes(WS_max, order))+
+    geom_segment(aes(x = 0, 
+                     y = order, 
+                     xend = WS_max, 
+                     yend = order), 
+                 color = "black")+
+    geom_point(aes(col = factor(western)),size = 7)+
+    geom_text(aes(label=WS_max),color="white",size=2.5)+
+    facet_wrap(~ factor(western), scales="free", labeller = as_labeller(conference_names))+
+    labs(title = paste0('Win Shares on Teams (Season ',year-1,'-',substr(year,3,4),")"))+
     theme(plot.title = element_text(hjust = 0.5))+
-    theme(legend.position = "bottom")
+    theme(legend.position = "bottom")+
+    guides(colour=FALSE)+
+    xlab("Win shares of player with most win shares on each team")+
+    ylab("Conference standings")+
+    scale_y_continuous(
+      breaks = WL_record_ws$order,
+      labels = paste0(WL_record_ws$Season_Rank,". ",WL_record_ws$Tm)
+    ) 
   print(p)
+  
 }
-
+#png("./plots/team_ws_plot.png",width = 960,height = 480)
 team_ws_plot(2019)
+#dev.off()
+
 ```
 
 ```{r}
@@ -347,14 +686,12 @@ get_ws_raw_data = function(year){
 }
 
 
-
-
 player_ws_plot = function(){
   year_list = c(2015:2019)
   ws_stats  = NULL
   for(i in 1: length(year_list)){
-      ws_tmp = get_ws_raw_data(year_list[i])
-      ws_stats = rbind(ws_stats, ws_tmp)
+    ws_tmp = get_ws_raw_data(year_list[i])
+    ws_stats = rbind(ws_stats, ws_tmp)
   }
   ws_stats = ws_stats %>% arrange(-WS)
   player_rank_list = unique(ws_stats$Player)
@@ -373,24 +710,100 @@ player_ws_plot = function(){
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
   print(p)
 }
+#png("./plots/player_ws_plot.png",width = 960,height = 480)
 player_ws_plot()
+#dev.off()
+
 
 ```
 
 ## Feature Engineering
 The performance of a team could be captured by both the team-level and player-level statistics. The team-level features that could be included in our current model were:
+
 * number of W and L, W/L percentage, conference rank
 * team total/average points, oppponent total/average points
-* other secondary statistics
+* other secondary statistics: total rebounds, assists, blocks, turnovers, personal fouls
 
 The player-level features that could be incorporated in the team performance metrics were
 
-* number of league top (50-100) win share players in the team
+* number of league top 100 win share players in the team
 * highest win share value in the team
+
+### PageRank Algorithm 
+```{r}
+library(igraph)
+library(tcltk)
+library(dplyr)
+#dat<-read.csv("./data/game_stats.csv",stringsAsFactors = F)
+dat <- game_stats %>%
+  filter(Season=='2018-19')
+
+
+
+dat$raw_points<-abs(dat$PTS.1-dat$PTS)
+dat$win<-ifelse(dat$PTS.1-dat$PTS>0,dat$Home.Neutral,dat$Visitor.Neutral)
+dat$lose<-ifelse(dat$PTS.1-dat$PTS>0,dat$Visitor.Neutral,dat$Home.Neutral)
+dat_igraph<-data.frame(A=dat$lose,B=dat$win,weight=dat$raw_points)
+dat_igraph<-dat_igraph%>%group_by(A,B)%>%summarise(weight=mean(weight))
+dat_graph<-graph.data.frame(d=dat_igraph,directed = TRUE)
+is_weighted(dat_graph)
+# plot.igraph(dat_graph)
+#tkplot(dat_graph)
+adj_matrix<-get.adjacency(dat_graph,attr="weight")
+rank <- sort(page.rank(dat_graph,directed=T)$vector,decreasing = T)
+
+##first twenty
+dat_igraph_20<-data.frame(A=dat$lose[1:300],B=dat$win[1:300],weight=dat$raw_points[1:300])
+dat_igraph_20<-dat_igraph_20%>%group_by(A,B)%>%summarise(weight=mean(weight))
+dat_graph_20<-graph.data.frame(d=dat_igraph_20,directed = TRUE)
+is_weighted(dat_graph_20)
+#tkplot(dat_graph)
+adj_matrix<-get.adjacency(dat_graph_20,attr="weight")
+rank <- sort(page.rank(dat_graph_20,directed=T)$vector,decreasing = T)
+
+#plot
+west_ind_sort<-west_ind[match(get.vertex.attribute(dat_graph_20,"name"), west_ind$TeamName),]
+dat_graph_20<-set_vertex_attr(dat_graph_20,"western",value=west_ind_sort$western)
+dat_graph_20<-set_vertex_attr(dat_graph_20,"Tm",value=as.character(west_ind_sort$Tm))
+colrs<-c("gray50","tomato")
+V(dat_graph_20)$color <- colrs[as.factor(V(dat_graph_20)$western)]
+deg <- 2*degree(dat_graph_20, mode="in")
+plot.igraph(dat_graph_20,
+            edge.arrow.size=0.3,
+            vertex.color=colrs[as.factor(V(dat_graph_20)$western)],
+            vertex.label=V(dat_graph_20)$Tm,
+            vertex.size=deg,
+            edge.width=4*E(dat_graph_20)$weight/max(E(dat_graph_20)$weight))
+```
 
 ## Data Analysis
 
-### Statistical Models: Bradley-Terry Logistic Regression Model
+### Statistical Model: Generalized Bradley-Terry Logistic Regression Model
+Why we choose logit model over machine learning models:
+
+- Better Interpretation: infernce and prediction  
+- Prediction Accuracy: achieve similar performance compared to tree-based ML models 
+- Time Saving 
+    - save training time 
+    - no need for parameter tuning, cross-validation...
+
+
+#### Model Formulation
+$$ logit(Pr(i \succ j \ \text{in game} \ k )) = \lambda_i - \lambda_j + \delta \cdot I(i \in adv)+ \gamma^{\top} z_{ij}  $$
+
+
+#### Evaluation Metric
+Cross-Entropy Loss:
+$$ \mathcal{L} = - \sum_{i=1}^N y_i log(\hat{p_i})+(1-y_i) log(1-\hat{p_i}) $$
+
+#### Prediction Results
+
+#### Model Checking
+- Overdispersion: quasibinomial, dispersion parameter $\approx$ 1 
+
+
+
+
 ```{r}
 library(caret)
 
@@ -399,23 +812,26 @@ get_train_test_data = function(year, firstN){
   game_stats_year = get_game_year_feature(year)
   
   train_set = game_stats_year[-c(1:firstN),]
-  team_per_diff = data.frame(team_stats_year[match(train_set$Home,team_stats_year$TeamName),c(2,5,6,7,9,10)]
-                             - team_stats_year[match(train_set$Away,team_stats_year$TeamName),c(2,5,6,7,9,10)])
+  feature_idx = -c(1,3,4,14)
+  team_per_diff = data.frame(team_stats_year[match(train_set$Home,team_stats_year$TeamName),feature_idx]
+                             - team_stats_year[match(train_set$Away,team_stats_year$TeamName),feature_idx])
   train_set_teamper = data.frame(train_set,
                                  team_per_diff = I(as.matrix(team_per_diff)))
   
-  return(train_set_teamper)
+  return(list(data_logit = train_set_teamper, data_ML = data.frame(cbind(train_set, team_per_diff))))
 }
 
 
 
 build_logit_model_year = function(train_year = 2018, test_year = 2019, firstN = 300){
   
-  train_set = get_train_test_data(train_year,firstN)
-  test_set = get_train_test_data(test_year,firstN)
+  train_set = get_train_test_data(train_year,firstN)$data_logit
+  test_set = get_train_test_data(test_year,firstN)$data_logit
+  
+  print(colnames(train_set))
   
   ## logit model
-  logit_model = glm(HomeWin~ team_per_diff,family=binomial(link='logit'),
+  logit_model = glm(HomeWin~ team_per_diff ,family=quasibinomial(link='logit'),
                     data = train_set)
   print(summary(logit_model)) # model summary
   
@@ -438,9 +854,47 @@ head(test_set_pred)
 ```
 
 
-### Machine Learning Models: Decision Tree, Random Forest, Neural Network
+### Machine Learning Models: Decision Tree and Random Forest 
+
+```{r, eval=F}
+library(rpart.plot)
+library(randomForest)
+
+build_dec_tree_year = function(train_year = 2018, test_year = 2019, firstN = 300){
+  
+
+  
+  train_set = get_train_test_data(train_year,firstN)$data_ML
+  test_set = get_train_test_data(test_year,firstN)$data_ML
+  
+  print(colnames(train_set))
+  print(head(train_set))
+  
+  DecTreefit = train(factor(HomeWin) ~ . , 
+                   method = "rpart", data = train_set[,-c(1:5)])
+
+  # create the tree plot
+  rpart.plot(DecTreefit$finalModel)
+
+ # random forest model
+  RFfit = randomForest(factor(HomeWin) ~ ., data = train_set[,-c(1:5)])
+  varImpPlot(RFfit)
+  pred_win_prob = predict(RFfit,newdata = test_set, type = "prob")
+  pred_game = predict(RFfit,newdata = test_set)
+  test_set_pred = cbind(test_set,pred_win_prob,pred_game)
+  print(confusionMatrix(factor(test_set_pred$pred_game),factor(test_set_pred$HomeWin)))
+  return(test_set_pred)
+}
+test_set_pred_tree = build_dec_tree_year(2017,2018)
+```
 
 ### Simulation Framework
+
+Simulate each game using `rbinom` with the prob parameters equal to our predicted winning probs. We could obtain the following results:
+
+- Playoff prob
+- The average/ median/ CI of winning games for each team
+
 ```{r}
 ## Remaining 60 games
 set.seed(2019)
@@ -452,11 +906,16 @@ game_simulation = function(pred_result, B, year, Nfirst = 300){
   WL_record = cbind(west_ind,W = 0, L=0)
   
   WL_record_pre  = WL_record_cal(pretrain_set,WL_record)
-  WL_record_post = WL_record_cal(train_set,WL_record)
-  WL_record_all  = WL_record_cal(train_set,WL_record_pre)
-  WL_record_west = WL_record_all %>%
-    filter(western==1) %>%
-    arrange(-W)
+  if (year!=2020){
+    WL_record_post = WL_record_cal(train_set,WL_record)
+    WL_record_all  = WL_record_cal(train_set,WL_record_pre)
+    WL_record_west = WL_record_all %>%
+      filter(western==1) %>%
+      arrange(-W)
+  }
+  if (year==2020){
+    WL_record_west = WL_record_pre
+  }
   
   
   WL_simu_rep = NULL
@@ -498,6 +957,258 @@ print(WL_record_west)
 ```
 
 
-### Extension: An Ensemble Learning Method for Integrative Prediction Using Mutiple Seasons Data
+### Extension: Integrative Prediction Using Mutiple Seasons Data
+
+#### Year-Effect Exploration
+
+
+```{r}
+library(factoextra)
+combine_season_data = function(){
+  year_list = c(2016:2020)
+  team_stats = NULL
+  for(i in 1:length(year_list)){
+    year = year_list[i]
+    team_stats_year = get_team_year_feature(year) 
+    team_stats_year = team_stats_year %>%
+      mutate(Season = paste0(year-1,'-',substr(year,3,4)),
+             year = year)
+    team_stats = rbind(team_stats,team_stats_year)
+  }
+  return(team_stats)
+}
+team_stats_all = combine_season_data()
+
+## team pc plot
+team_pc_plot = function(){
+  #team_stats_all = combine_season_data()
+  team_stats_X = team_stats_all %>%
+    select(W,L,`W/L%`,TeamPTS, OpponentPTS,western,ConfRank,WS_max,WS_num) 
+  team_stats_pc = prcomp(team_stats_X,scale. = T)$x[,1:2] # select first two PCs
+  
+  rownames(team_stats_X) = paste(team_stats_all$Tm,team_stats_all$Season)
+  
+  
+  team_stats_pc = data.frame(team_stats_pc,team_stats_all[,c('Tm', 'TeamName','Season','western','year')])
+  
+  league_summary = team_stats_pc %>% 
+    group_by(Season,year) %>%
+    summarise(PC1_med = median(PC1),
+              PC2_med = median(PC2)) %>%
+    as.data.frame()
+  rownames(league_summary) = league_summary$Season
+  
+  
+ 
+  
+  p1 = # team_stats_pc %>%
+    ggplot(data = team_stats_pc, aes(x= PC1, y= PC2,col = factor(year)))+
+    geom_point()+
+    geom_text(aes(label=paste(Tm,Season)),size = 2, vjust = 0, nudge_y = 0.1)+
+    labs(title = 'PC plots for NBA teams from 2015-16 to 2019-20')+
+    theme(plot.title = element_text(hjust = 0.5))+
+    theme(legend.position = "bottom")+
+    geom_point(aes(x=PC1_med,y=PC2_med),data = league_summary, size = 5, shape = 7)
+ # print(p1)
+  
+  p1.pca = fviz_pca_ind( prcomp(team_stats_X,scale. = T),
+                        #label = "none", # hide individual labels
+                        habillage = team_stats_all$year, # color by groups
+                        addEllipses = TRUE, # Concentration ellipses
+                        labelsize = 3)+ 
+    labs(title = "PC plot of NBA teams from 2015-16 to 2019-20")+
+    theme(plot.title = element_text(hjust = 0.5))
+  print(p1.pca)
+  
+  
+  year_dist = dist(league_summary[,-1],diag = T,upper = T)
+  p3 = fviz_dist(year_dist, 
+                 order=F,gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))+
+    labs(title = "Season Distance Matrix")+
+    theme(plot.title = element_text(hjust = 0.5))
+
+  print(p3)
+  return(year_dist)
+} 
+year_dist = team_pc_plot()
+```
+
+- PC plot: could not discover significant season patterns (cluster together)
+- distance matrix: neighboring years are closer
+
+
+
+```{r}
+## kmeans clustering plot
+library(factoextra)
+team_cluster_plot = function(){
+  team_stats_X = team_stats_all %>%
+    select(W,L,`W/L%`,TeamPTS, OpponentPTS,western,ConfRank,WS_max,WS_num)  %>% 
+    as.data.frame()
+  rownames(team_stats_X) = paste(team_stats_all$Tm,team_stats_all$Season)
+  k5 = kmeans(scale(team_stats_X), centers = 5, nstart = 15)
+  p = fviz_cluster(k5, data = team_stats_X,
+                   labelsize = 5)+
+    labs(title = "cluster plot of NBA teams from 2015-16 to 2019-20")+
+    theme(plot.title = element_text(hjust = 0.5))
+  print(p)
+}
+team_cluster_plot()
+```
+
+We group teams from multiple seasons into 5 clusters based on k-means algorithm. 
+
+  - Pink: most competitive teams, e.g. GSW 2015-16
+  - Red: least competitive teams, e.g. PHI 2015-16
+
+No season patterns.
+
+
+#### Integrative Prediction
+
+- Train one model using multiple seasons data
+- Train a separate model for each season data, then make weighted prediction. 
+```{r}
+weighted_game_prediction = function(pred_result,year_dist){
+  year = (ncol(pred_result))/2
+  print(year)
+  year_dist_mat = as.matrix(year_dist)
+  year_weight = (1/year_dist_mat[year+1,1:year])/sum(1/year_dist_mat[year+1,1:year])
+  print(year_weight)
+  
+  for(i in 1:nrow(pred_result)){
+      pred_result$pred_win_weighted_prob[i] = sum(pred_result[i,seq(1,2*year,by = 2)] * year_weight)
+      pred_result$pred_game_vote[i] = ifelse(pred_result$pred_win_weighted_prob[i]>=0.5,1,0)
+    }
+
+  return(pred_result)
+}
+
+win_prob_prediction = function(train_year = c(2016,2017,2018), test_year = 2019, firstN = 300,
+                               year_effect = 0){
+  ## ignore year effect
+  if (year_effect == 0){
+    train_set = NULL
+    for(i in 1:length(train_year)){
+      train_set_tmp = get_train_test_data(train_year[i],firstN)$data_logit
+      train_set = rbind(train_set, train_set_tmp)
+    }
+    test_set = get_train_test_data(test_year,firstN)$data_logit
+    
+    ## logit model
+    logit_model = glm(HomeWin~ team_per_diff,family=binomial(link='logit'),
+                      data = train_set)
+    print(summary(logit_model)) # model summary
+    
+    ## training accuracy
+    print("training accuracy")
+    print(confusionMatrix(factor(ifelse(logit_model$fitted.values>0.5,1,0)),
+                          factor(train_set$HomeWin)))
+    
+    ## testing accuracy
+    pred_win_prob = predict(logit_model,newdata = test_set, type = "response")
+    pred_game = ifelse(pred_win_prob>0.5,1,0)
+    
+    test_set_pred = cbind(test_set,pred_win_prob,pred_game)
+    if (test_year!=2020){
+      print("testing accuracy")
+      print(confusionMatrix(factor(test_set_pred$pred_game),factor(test_set_pred$HomeWin)))
+    
+    }
+    return(test_set_pred)
+  }
+  
+  # consider year effect
+  if (year_effect == 1){
+    test_set = get_train_test_data(test_year,firstN)$data_logit
+    test_set_pred = test_set
+    
+    for(i in 1:length(train_year)){
+      train_set= get_train_test_data(train_year[i],firstN)$data_logit
+      
+      logit_model = glm(HomeWin~ team_per_diff,family=binomial(link='logit'),
+                        data = train_set)
+     
+      pred_win_prob = predict(logit_model,newdata = test_set, type = "response")
+      pred_game = ifelse(pred_win_prob>0.5,1,0)
+      test_set_pred = data.frame(test_set_pred,pred_win_prob,pred_game)
+    }
+    
+    a = weighted_game_prediction(test_set_pred[,-c(1:7)],year_dist = year_dist)
+    ans = cbind(test_set_pred[,c(1:7)],a)
+    if (test_year!=2020){
+      print(confusionMatrix(factor(a$pred_game_vote),factor(test_set_pred$HomeWin)))
+    }
+    return(ans)
+  }
+}
+#win_prob_pred19_weight = win_prob_prediction(year_effect = 1)
+
+#win_prob_pred19_all = win_prob_prediction()
+#win_prob_pred19_one = win_prob_prediction(train_year = 2018,year_effect = 0)
+#a = build_logit_model_year()
+
+win_prob_pred20_all = win_prob_prediction(train_year = c(2016:2019),test_year = 2020)
+win_prob_pred20_weight = win_prob_prediction(train_year = c(2016:2019),test_year = 2020,year_effect = 1)
+win_prob_pred20_weight = win_prob_pred20_weight[,c(1:7,16,17)]
+
+
+
+B = 100
+simu_result = game_simulation(win_prob_pred20_all, B, year = 2020)
+train_set_simu = simu_result$simu
+train_set_summary = train_set_simu %>%
+  group_by(Tm) %>%
+  summarise(W_avg = mean(W),
+            L_avg = 82 - W_avg,
+            W_med = median(W),
+            L_med = 82 - W_med,
+            playoff_prob = sum(playoff)/B) %>%
+  arrange(-W_avg)
+
+WL_record_west = simu_result$result %>%
+  filter(western==1)
+
+saveRDS(WL_record_west,"./data/pre_20_games.rds")
+saveRDS(win_prob_pred20_all,"./data/post_62_games_pred.rds")
+
+
+```
+
 
 ## Summary 
+#### Wrap-up Functions
+
+- Data Scraping 
+    - `get_schedule_data(year,month)`: obtain the game schedules and results in specific year and month
+    - `combine_game_data()`: combine the game schedules data
+    - `get_team_stats(year)`: obtain the team-level data (30 teams in the league) of first 20 games in specific year
+
+- Data Wrangling and Feature Engineering
+    - `get_ws_data(year)`: obtain the win share data in specific year
+    - `get_team_year_feature(year)`: obtain the team performance feature vectors in specific year
+    - `get_game_year_feature(year)`: obtain the game results in tidy format in specific year
+    - `get_injury_data(year)`, `combine_injury_data()`: obtain and combine the injury data
+
+- EDA
+    - `team_def_off_plot(year)`: show each team's defense vs offense in specific year
+    -  `team_rank_plot(year,Nfirst)`: show each team's season rank vs first N games' rank in specific year
+    - `home_way_plot(year)`: show each team's home and away records in specific year; show western vs eastern records
+    - `team_ws_plot(year)`: show each team's highest winshare in specific year
+    - `player_ws_plot()`: show the winshare of top players in the league in recent years
+  
+- Model Building
+    - `get_train_test_data(year,firstN)`: obtain the training and test data of first N games in specific year.
+    - `build_logit_model_year(train_year, test_year, firstN)`: use the first N games of train_year to build the model, and test the model on test_year. return the prediction results (W/L) and winning probability of each game. 
+  
+- Integrative Prediction
+    - `combine_season_data()`: combine the team performance feature data of multiple seasons
+    - `team_pc_plot()`: create the PC plot for the team performances of all the 30 teams in multiple seasons; the distance matrix of season data
+  - `team_cluster_plot()`: create the cluster plot for each team in multiple seasons
+  - `win_prob_prediction(train_year, test_year,firstN,year_effect)`: The winning probability prediction function allow for year_effect
+  
+- Simulation
+    - `WL_record_cal(game_schedule,WL_record)`: calculate the W/L records for each team given the game schedule
+    - `game_simulation(pred_result,B,year,Nfirst)`: given the predict results in specific year, repeat the game simulation for B times
+  
+  

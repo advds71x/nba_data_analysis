@@ -1,4 +1,5 @@
 library(rvest)
+library(tidyverse)
 
 ########################################
 #                                      #   
@@ -24,7 +25,7 @@ get_schedule_data = function(year, month){
   return(game_stats)
 }
 
-year_list = as.character(2016:2020)
+year_list = as.character(2011:2020)
 month_list = c("october","november","december",
                "january","february","march","april")
 
@@ -53,8 +54,10 @@ get_team_stats = function(year_min = 2016, year_max = 2020, game_min = 1, game_m
   team_stats = NULL
   page_num = ceiling((year_max-year_min+1)*30/100)
   for(i in 1:page_num){
-    team_url = paste0("https://www.basketball-reference.com/play-index/tgl_finder.cgi?request=1&match=single&lg_id=NBA&is_playoffs=N&team_seed_cmp=eq&opp_seed_cmp=eq&year_min=2016&year_max=2020&is_range=Y&game_num_type=team&game_num_min=1&game_num_max=20&order_by=date_game&order_by_asc=&offset=",
+    team_url = paste0("https://www.basketball-reference.com/play-index/tgl_finder.cgi?request=1&match=single&lg_id=NBA&is_playoffs=N&team_seed_cmp=eq&opp_seed_cmp=eq&year_min=",
+                      year_min,"&year_max=",year_max,"&is_range=Y&game_num_type=team&game_num_min=1&game_num_max=20&c1stat=orb&c1comp=gt&c2stat=drb&c2comp=gt&c3stat=ast&c3comp=gt&c4stat=stl&c4comp=gt&order_by=pts&offset=",
                       (i-1)*100)
+    
     team_stats_tmp = team_url %>% 
       read_html %>%
       html_table() %>%

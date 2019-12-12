@@ -7,6 +7,8 @@
 #                                                  #
 ####################################################
 
+library(caret)
+
 ## train the model using train_year, test the model on test_year, use firstN games to capture the feature
 get_train_test_data = function(year, firstN){
   team_stats_year = get_team_year_feature(year)
@@ -43,8 +45,17 @@ build_logit_model_year = function(train_year = 2018, test_year = 2019, firstN = 
   pred_game = ifelse(pred_win_prob>0.5,1,0)
   
   test_set_pred = cbind(test_set,pred_win_prob,pred_game)
-  print(confusionMatrix(factor(test_set_pred$pred_game),factor(test_set_pred$HomeWin)))
+  #print(confusionMatrix(factor(test_set_pred$pred_game),factor(test_set_pred$HomeWin)))
   return(test_set_pred)
 }
 
-test_set_pred = build_logit_model_year()
+test_set_pred = build_logit_model_year(2019,2020,280)
+
+## evaluation 
+library(pROC)
+win_prob_pred18_sub = win_prob_pred18_all %>%
+  filter(pred_win_prob > 0.6 | pred_win_prob < 0.4)
+plot.roc(win_prob_pred18_sub$HomeWin, win_prob_pred18_sub$pred_game,
+         percent = T,
+         print.auc = T)
+confusionMatrix(factor(win_prob_pred18_sub$HomeWin), factor(win_prob_pred18_sub$pred_game))

@@ -25,10 +25,10 @@ get_ws_data = function(year){
   ws_stats$WS = as.numeric(ws_stats$WS )
   ws_stats_summary = ws_stats %>%
     group_by(Tm) %>%
-    summarise(WS = max(WS))
+    summarise(WS = n())
   return(ws_stats_summary)
 }
-WinShare = get_ws_data(2018)
+Winshare = get_ws_data(2018)
 
 
 get_team_year_feature = function(year){
@@ -51,14 +51,14 @@ get_team_year_feature = function(year){
   
   ## add the winshare feature from previous season
   Winshare  = get_ws_data(year-1)
-  team_stats_year_rank = team_stats_year_rank %>% left_join(WinShare, by = 'Tm')
+  team_stats_year_rank = team_stats_year_rank %>% left_join(Winshare, by = 'Tm')
   team_stats_year_rank$WS[is.na(team_stats_year_rank$WS)] = 0
   
   return(team_stats_year_rank)
   
 }
 
-team_stats_18to19 = get_team_year_feature(2019)
+team_stats_18to19 = get_team_year_feature(2018)
 
 
 get_game_year_feature = function(year){
