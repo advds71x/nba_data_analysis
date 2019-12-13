@@ -35,7 +35,7 @@ https://kate-yueyi-li.shinyapps.io/nba_simulation_shiny/
 
 
 
-### To get a quick overview of the project, checkout our website at https://advds71x.github.io/NBAproj/ and Youtube video at https://www.youtube.com/watch?v=nkDTnJeeuJs&feature=youtu.be
+## To get a quick overview of the project, checkout our [website](https://advds71x.github.io/NBAproj/) and [Youtube video](https://www.youtube.com/watch?v=nkDTnJeeuJs&feature=youtu.be)
 
 ## Contributors
 Kate Li (yli324@jhu.edu) 
