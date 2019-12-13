@@ -14,13 +14,17 @@ The `data` folder contains our training and testing data scraped from BASKETBALL
 
 ## Exploratory Data Analysis
 The `plot` folder contains plots from our EDA. 
-* `home_away.png` - total wins of each team stratified by home/away and conference during season 2018-2019
-* `player_ws_plot.png` - players' win share rankings over season 2014-15 to season 2018-19 
-* `team_def_off_plot.png` - points scored of each team vs opponent in the first 20 games during season 2018-19
-* `team_rank_plot.png` - final conference standing vs conference standing after 20 games during season 2018-19
-* `team_win_plot.png` - final total wins vs total wins after 20 games during season 2018-19
-* `team_ws_plot.png` - win shares of of the best players in each team 
-* `west_east.png` - records when the teams face teams from the opposing conference
+* `back2back.png` - boxplot: the proportions of games won stratified by whether it is a back-to-back game
+* `home_away.png` - histagram: the total wins of each team stratified by home/away and conference during season 2018-2019
+* `player_ws_plot.png` - boxplot: the players' win share rankings over season 2014-15 to season 2018-19 
+* `team_cluster_plot.png` - cluster: five clusters of the teams from 2015-16 to 2019-20 using k-means algorithm
+* `team_def_off_plot.png` - scatter plot: points scored of each team vs opponent in the first 20 games during season 2018-19
+* `team_pc_plot.png` - principle component: two PCs of all the teams from 2015-16 to 2019-20
+* `team_rank_plot.png` - scatter plot: final conference standing vs conference standing after 20 games during season 2018-19
+* `team_win_plot.png` - scatter plot: final total wins vs total wins after 20 games during season 2018-19
+* `team_ws_plot.png` - line segment: win shares of of the best players in each team 
+* `west_east.png` - histogram: win/lose when the teams face opposing conference
+* `year_dist.png` - heatmap: the distance between every pair of seasons 
 
 ## Source code
 The `source` folder contains source code of the functions used in the analysis 
@@ -31,6 +35,7 @@ The `source` folder contains source code of the functions used in the analysis
 * `feature_eng.R` - functions to create team features
 * `model_build.R` - functions to build and test the prediction model 
 * `simulation.R` - based on the predicted probability, simulate the games for B times
+
 
 ## Shinyapp
 
