@@ -37,7 +37,7 @@ The `source` folder contains source code of the functions used in the analysis
 The [Shinyapp](https://kate-yueyi-li.shinyapps.io/nba_simulation_shiny/) presents one simulation based on the predicted probabilities from our model. User could see the the final simulation results as well as daily game predictions. 
 
 
-## To get a quick overview of the project, checkout our [website](https://advds71x.github.io/NBAproj/) and [Youtube video](https://www.youtube.com/watch?v=nkDTnJeeuJs&feature=youtu.be). For full analysis, read our final [report](https://advds71x.github.io/nba_data_analysis/description). 
+## To get a quick overview of the project, checkout our [website](https://advds71x.github.io/NBAproj/) and [Youtube video](https://www.youtube.com/watch?v=nkDTnJeeuJs&feature=youtu.be). For the full analysis, read our [final report](https://advds71x.github.io/nba_data_analysis/description). 
 
 ## Contributors
 Kate Li (yli324@jhu.edu) 
