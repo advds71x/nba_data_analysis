@@ -23,7 +23,7 @@ The plot folder contains plots from our EDA.
 
 ## Function source code
 * EDA_visualize.R
-* data_integration.R
+* data_integration.R  
 * data_scraping.R
 * data_wrangling.R
 * feature_eng.R
@@ -35,11 +35,14 @@ https://kate-yueyi-li.shinyapps.io/nba_simulation_shiny/
 
 
 
-To get a quick overview of the project, checkout our website at https://advds71x.github.io/NBAproj/ and Youtube video at https://www.youtube.com/watch?v=nkDTnJeeuJs&feature=youtu.be
+### To get a quick overview of the project, checkout our website at https://advds71x.github.io/NBAproj/ and Youtube video at https://www.youtube.com/watch?v=nkDTnJeeuJs&feature=youtu.be
 
 ## Contributors
-Kate Li (yli324@jhu.edu)
+Kate Li (yli324@jhu.edu) 
+
 Runzhe Li (rli51@jhmi.edu)
+
 Yifan Zhang (yzhan170@jhu.edu)
+
 Linda Zhou (lzhou54@jhu.edu)
 
