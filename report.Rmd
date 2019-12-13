@@ -1,7 +1,7 @@
 ---
-title: "NBA Data Analysis Project"
+title: "Predicting NBA Standings - Who Will Make the 2019-2020 NBA Playoffs in the Western Conference?"
 author: "Kate Li, Runzhe Li, Yifan Zhang, Linda Zhou"
-date: "November 15, 2019"
+date: "December 12, 2019"
 output:
   html_document:
     highlight: tango
@@ -11,52 +11,80 @@ output:
     toc_float: yes
   pdf_document:
     toc: yes
-permalink: /description
+permalink: /report
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = T,warning=F, message=F)
 ```
 
+## Data Access Instructions
+The `data` folder contains our data scraped from BASKETBALL REFERENCE
+
+* `game_stats_all.csv` - The game results (scores) for all regular season games from season 2015-16 to 2018-19 and for regular season games already played in season 2019-20 and the upcoming schedule for the remaining games in season 2019-2020.
+* `team_stats_all.csv` - The team statistics of first 20 games from season 2015-16 to 2019-20.
+* `pre_20_games.rds` - the results for the first 20 games for each team during season 2019-20
+* `post_62_games_pred.rds` - predictions for the rest of season 2019-2020
+
+You only need the first two csv files to run the rmarkdown code.
+
 ## Motivation and Overview
-The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. During the regular season, each of the 30 teams (15 in the Eastern Conference and 15 in the Western Conference) plays 82 games. At the conclusion of the regular season, the top eight teams in each conference advance to the playoffs for a chance to compete for the championship title. Towards the end of the regular season, the race for the final few playoff spots is very intense, and usually it isn't until the final game of the regular season is over when we know which teams have made the cut. As NBA fans ourselves, we are eager to find out which teams will make the playoffs this year (2019-20 NBA season), but rather than wait until next April, as data analysts, we thought it would be interesting if we could make such predictions now. We hope our analysis will lead to meaningful insights that will be of interest to NBA fans all over the world. 
+The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. During the regular season, each of the 30 teams (15 in the Eastern Conference and 15 in the Western Conference) plays 82 games. At the conclusion of the regular season, the top eight teams in each conference advance to the playoffs for a chance to compete for the championship title. Towards the end of the regular season, the race for the final few playoff spots is very intense, and usually it isn't until the final game of the regular season is over when we know which teams have made the cut. As NBA fans ourselves, we are eager to find out which teams will make the playoffs this year (2019-20 NBA season), but rather than wait until next April, as data analysts, we thought it would be interesting if we could make such predictions now. We hope our analysis will lead to meaningful insights that will be of interest to NBA fans and NBA data analysts all over the world. 
 
 ## Project Objectives
-The goal of this project is to build a statiscial machine learning model that can predict the winning percentages of the NBA teams in the Western Conference, and thus the playoff teams (the eight teams with the highest winning percentages). In addition to overall winning percentages, we will also provide predicted winning percentages for home games and for away games for each team.
+The goal of this project is to build a statistical machine learning model that can predict the regular season winning percentages of the NBA teams in the Western Conference, and thus the playoff teams (the eight teams with the highest winning percentages). 
 
-We will undergo a comprehensive background study of the NBA to manually decide on what features to use. Then feature learning techniques will be applied. We also plan to evaluate different models. A successful model will predict the 2019-2020 NBA playoffs in the Western Conference. Ideally, the model could also be trained to predict the playoff teams in the Eastern Conference and finally round-by-round playoff predictions.
+We will undergo a comprehensive background study of the NBA to manually decide on what features to use. Exploratory data analysis will aid in our selection of features. We also plan to evaluate different models. A successful model will predict the 2019-2020 NBA playoff teams in the Western Conference. Ideally, the model could also be trained to predict the playoff teams in the Eastern Conference and finally round-by-round playoff predictions, though this is beyond the scope of our project.
+
+## Target Audience
+The target audience we have in mind are NBA data analysts and NBA fans. We have prepared an analysis report and a project website that contain some of the more technical details of the analysis that may be of more interest to analysts, as well as a screencast that captures some of the major findings of the project, which NBA fans will hopefully enjoy learning about.
 
 
 ## Related Work and Literature Review
 
-### Playoff Prediction 
-https://projects.fivethirtyeight.com/2020-nba-predictions/
-Fivethirtyeight runs NBA predictions based on a play-based stastics RAPTOR (Robust Algorithm (using) Player Tracking (and) On/Off Ratings).
-The main idea of the prediction method is that each team is judged according to the current level of talent of its players and how much that talent is expected to play going forward.
+Three main approaches are used to forecast NBA game results: modeling the scores of the two opposing teams, modeling the difference in scores of the two teams, and modeling the binary win-loss outcome of the game. The third approach is of primary interest to us since we hope to predict which teams will make the playoffs, which only depends on winning percentages of teams, or in other words win-loss records.
 
-* The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and a defensive rating for each player based on the RAPTOR metric, which uses statistics including player tracking metrics and plus/minus data. The ratings are updated throughout the season.
-* Each player has a estimated playing-time for each game based on his own history and the record of his similar comparables, taking into account of injuries and rest days. 
-* For a given lineup, they combine players' rating and playing-time into a team score on both sides. That score also accounts for home-court advantage fatigue, travel and altitude. The score are then converted into expected total points and winning probability.
+### FiveThirtyEight NBA predictions
+FiveThirtyEight runs NBA predictions based on the player-based metric RAPTOR (Robust Algorithm (using) Player Tracking (and) On/Off Ratings). The main idea of the prediction method is to judge each team according to the current level of talent of its players and how much that talent is expected to play going forward. The talent of a player is estimated by a similarity algorithm. The algorithm finds the most similar historical comparables to estimate offensive and defensive ratings for each player based on the RAPTOR metric, which uses player tracking metrics and plus/minus data. The ratings are updated throughout the season. Each player also has an estimated playing-time for each game based on his own history and the record of his similar comparables. For a given lineup, players' ratings and playing-times are combined into a team score on both sides. The team score also accounts for home-court advantage, fatigue, travel and altitude. The score is then converted into expected total points and projected winning percentage over a season.
 
-Limitations:
-* Many NBA superstars are uniquely outstanding and are hard find historical comparales. 
-* Requires too much information such as the roster of every game
-* Arbrary metric. For example, teams that played the previous day are given a penalty of 46 rating points. (Based on our analysis as presented below, fatigue does not have as much impact)
+The method has three major limitations:
 
-### Pair-comparison data
-Bradeley-Terry model
+* Many NBA superstars are uniquely outstanding and it is hard to find historical comparables. 
+
+* Requires too much information such as the roster of every game, which is difficult to obtain and is subject to change. 
+
+* Some of the metrics are arbitrary. For example, teams that played the previous day (back-to-back games) are given a penalty of 46 rating points. (Based on our analysis presented in a later section, fatigue does not impact all teams in the same manner and in fact does not have a huge impact on the great majority of teams.) 
+
+### Previous application of the Bradley–Terry model in NBA predictions
+Cattelan (2013) applied a dynamic Bradley–Terry (BT) model to make predictions for the 2009-2010 NBA regular season [1]. The model predicts a team's winning probability in a match based on the ability of the home team and visiting team. A team’s ability at home is evolutionary and depends only on the last match played at home while the team's ability playing away depends only on the last away match. The BT model provides a good framework for analyzing paired comparison data. However, there are two limitations of Cattelan's method:
+
+* The team ability statistic uses only information about the final result of the previous match. 
+
+* The model does not include player level statistics. 
+
+### Justifying that the Bradley–Terry model is well-suited for our study
+Cattelan's work inspired us to further look into the BT model framework for match predictions. While searching about the BT model, we found several papers that compared common methods used to model pairwise rank data, with Thurstonian models and Bradley–Terry models being the two most commonly applied models. Handley (2001) argued that the BT formulation is more mathematically developed: "Owing to its parsimony, it provides tractable maximum-likelihood estimators for scales, simultaneous confidence intervals and hypothesis tests for model fit, uniformity, and differences among populations of judges." [2] Cattelan (2012) also compared the two models and noted that Thurstonian models have the advantage of being more suitable for dependent observations, which is not a concern of our study [3]. 
+
+References:
+
+[1] Cattelan, M., Varin, C., & Firth, D. (2013). Dynamic Bradley–Terry modelling of sports tournaments. Journal of the Royal Statistical Society: Series C (Applied Statistics), 62(1), 135-150.
+
+[2] J. Handley (2001), Comparative Analysis of Bradley-Terry and Thurstone-Mosteller Paired Comparison Models for Image Quality Assessment, IS&T's 2001 PICS Conference Proceedings  
+
+[3] M Cattelan (2012), Models for Paired Comparison Data: A Review with Emphasis on Dependent Data, Statistical Science 2012, Vol. 27, No. 3, 412–433 DOI: 10.1214/12-STS396
+
 
 ## Data 
 
 ### Data Source
-All data were collected from the Basketball Reference website (https://www.basketball-reference.com/). The database contains player statistics including points per game, assists per game, rebounds per game, etc. of all players who have played in the NBA league since 1949-50 (the inaugural season of the NBA). The database also provides team statistics, including team 3-point percentages, winning percentages, etc.
+Most data were collected from the Basketball Reference website (https://www.basketball-reference.com/). The database contains player statistics including points per game, assists per game, rebounds per game, etc. of all players who have played in the NBA league since 1949-50 (the inaugural season of the NBA). The database also provides team statistics, including team 3-point percentages, winning percentages, etc. Player injury data were obtained from spotrac (https://www.spotrac.com/nba/injured-reserve/).
 
 ### Data Scraping 
 We used `rvest` package to scrape the following data from Basketball Reference website:
 
 * `team_stats`: The team statistics of first 20 games from season 2015-16 to 2019-20. We would use these data to define the team performance during specific season in the feature engineering section.
 
-* `game_stats`: The game results (W-L record and scores) for each of the remaining 62 games from season 2015-16 to 2018-19. We would use these data in the mode building section. 
+* `game_stats`: The game results (scores) for all regular season games from season 2015-16 to 2018-19 and for regular season games already played in season 2019-20 (as of December 11, 2019). We would use these data in the model building section. 
 
 ```{r,warning=F,message=F}
 team_stats = readr::read_csv("./data/team_stats_all.csv")
@@ -71,7 +99,7 @@ We do not include the code for web scraping in this rmarkdown file. Instead, ple
 ### Data Wrangling
 Data wrangling is performed throughout the whole data analysis process covering data tidying, exploratory data analysis, feature engineering, and model building. Here we demonstrate some necessary data wrangling procedures performed to prepare the dataset for further analysis.
 
-We list all 30 teams in the league (both full franchasise name and abbreviation), and add an indicator to differentiate the 15 teams in the Western Conference and the 15 in the Eastern Conference.
+We list all 30 teams in the league (both full franchise name and abbreviation), and add an indicator to differentiate the 15 teams in the Western Conference and the 15 in the Eastern Conference.
 ```{r,warning=F,message=F}
 library(rvest)
 library(tidyverse)
@@ -89,10 +117,8 @@ west_ind = data.frame(
 )
 ```
 
-We obtain the win shares stats (estimate of the number of wins contributed by a player) of the players ranked in the top 100 of the league in terms of win shares (WS) in a particular season. We then identify the win shares of the player with the highest win shares on each team. For example, in the 2017-18 season, the Dallas Mavericks (DAL) team had two players ranked in the top 100 in terms of WS: Dwight Powell (WS 6.6) and Dirk Nowitzki (WS 4.8). The highest win shares of the Dallas Mavericks team is thus 6.6.
+`get_ws_data(year)`: We obtain the win shares stats (estimate of the number of wins contributed by a player) of the players ranked in the top 100 of the league in terms of win shares (WS) in a particular season. 
 
-- get_injury_data(year) : obtain the [severe player injuries](https://www.spotrac.com/nba/injured-reserve/),sorted by "cash earned during injury" 
-- get_ws_injury_trans_data(year): obtain the winshare data considering player injuries and team transfer. 
 ```{r}
 get_ws_data = function(year){
   ws_url = paste0("https://www.basketball-reference.com/play-index/psl_finder.cgi?request=1&match=single&type=totals&per_minute_base=36&per_poss_base=100&season_start=1&season_end=-1&lg_id=NBA&age_min=0&age_max=99&is_playoffs=N&height_min=0&height_max=99&year_min=",
@@ -110,11 +136,14 @@ get_ws_data = function(year){
   
   return(ws_stats_summary)
 }
+```
 
+`get_injury_data(year)`: With basketball being a high impact sport and the NBA being one of the most competitive sports leagues, it is not uncommon for NBA players to experience injuries, some of which will cause players to miss games. We obtain player injury data for players who have missed games due to injury from: https://www.spotrac.com/nba/injured-reserve/ (which sorts the injured players by cash earned while injured). The website provides a separate data table for each season, and we created the `combine_injury_data()` function to combine injury data from all relevant seasons.
 
+```{r}
 get_injury_data = function(year){
   injury_url = paste0("https://www.spotrac.com/nba/injured-reserve/",
-                    year-1)
+                      year-1)
   injury_stats = injury_url %>% 
     read_html %>%
     html_table() %>%
@@ -147,6 +176,15 @@ combine_injury_data = function(){
 
 injury_stats = combine_injury_data()
 
+```
+
+Besides player injuries, team rosters of available players to play change also due to NBA trades and transactions where players change teams. We take both player injuries and team transfers into account, and define the adjusted highest-win-shares-on-team metric. This metric equals the win shares of the player with the highest win shares on each team (only considering players with win shares in the top 100 of the league). 
+
+For example, in the 2018-19 season, the Los Angeles Clippers (LAC) had four players ranked in the top 100 in terms of WS: Montrezl Harrell (WS 8.7), Danilo Gallinari (WS 8.2), Lou Williams (WS 5.1), and Patrick Beverley (WS 4.8). For the current 2019-20 season, Danilo Gallinari is now playing for the Oklahoma City Thunder (OKC) while LAC has welcomed new team members Paul George (2018-19 WS 11.9) and Kawhi Leonard (2018-19 WS 9.5), so the adjusted highest-win-shares on LAC for the 2019-20 season is 11.9 (`WS_max`=11.9). We also define the number-of-high-win-shares-on-team metric, which is the number of players on a team who have a win shares that is ranked in the top 100 in the league (from the previous season). Taking LAC for example, the team has five players with a top 100 win shares (`WS_num`=5).
+
+In addition, players with injuries during a season are left out when defining the team win shares metrics. For example, during the 2018-19 season, Golden State Warriors (GSW) members Stephen Curry, Kevon Looney and Klay Thompson all ranked in the top 100 in terms of WS. However, during the current 2019-20 season, all three players are out due to injury, and are thus not considered to be active players and thus do not contribute to GSW's team win shares metrics.
+
+```{r}
 get_ws_injury_trans_data = function(year){
   Winshare_last_year = get_ws_data(year-1)
   Winshare_this_year = get_ws_data(year)
@@ -168,12 +206,10 @@ get_ws_injury_trans_data = function(year){
 }
 winshare_feature = get_ws_injury_trans_data(2020)
 head(winshare_feature)
-
 ```
 
 
-We create a function that organizes team data in the first 20 games for all teams in a particular season. This process includes extracting from a larger database relevant variables which include number of wins, number of losses, winning percentages, total points scored by team, and total points scored by opponents. We also append conference ranking of each team at the end of the first 20 games to the data by ranking the winning percentages.
-
+`get_team_year_feature(year)`: We create a function that organizes team data in the first 20 games for all teams in a particular season. This process includes extracting from a larger database relevant variables which include number of wins, number of losses, winning percentages, total points scored by team, total points scored by opponents, total team rebounds, total team assists, total team steals, total team blocks, total team turnovers, and total team personal fouls. We also append conference ranking of each team at the end of the first 20 games as well as the `WS_max` and `WS_num` metrics we computed above.
 
 
 ```{r}
@@ -202,7 +238,7 @@ get_team_year_feature = function(year){
     select(-Player)
   team_stats_year_rank$WS_num[is.na(team_stats_year_rank$WS_num)] = 0
   team_stats_year_rank$WS_max[is.na(team_stats_year_rank$WS_max)] = 0
-
+  
   return(team_stats_year_rank)
   
 }
@@ -212,7 +248,7 @@ head(team_stats_18to19)
 
 ```
 
-We also create a function that organizes data of all regular season games in a particular season. This process includes extracting from a larger database relevant variables which include date of game, name of home team and visiting team, and points scored by home team and visiting team. We also append an indicator variable indicating whether the game was won by the home team by comparing points scored by home team and visiting team.
+`get_game_year_feature(year)`: We also create a function that organizes data of all regular season games in a particular season. This process includes extracting from a larger database relevant variables which include date of game, name of home team and visiting team, and points scored by home team and visiting team. We also append an indicator variable indicating whether the game was won by the home team.
 ```{r}
 get_game_year_feature = function(year){
   game_stats_year = game_stats %>% 
@@ -233,55 +269,6 @@ head(game_stats_18to19)
 
 
 ## Exploratory Data Analysis
-
-```{r,warning=F,message=F, eval=F}
-WL_record = cbind(west_ind,W = 0, L=0)
-WL_record  = rbind(WL_record_cal(get_game_year_feature(2019),WL_record),WL_record_cal(get_game_year_feature(2018),WL_record),
-                   WL_record_cal(get_game_year_feature(2017),WL_record),WL_record_cal(get_game_year_feature(2016),WL_record))
-colnames(WL_record)[c(4,5)] = c("W.all","L.all")
-WL_record = WL_record %>%
-        group_by(western) %>%
-        mutate(Season_Rank = order(order(W.all, decreasing = T)))
-WL_record = WL_record %>%
-        mutate(Playoff = Season_Rank <= 8)
-conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
-playoffplot <- WL_record %>%
-                ggplot(aes(x=W.all/(L.all+W.all),fill=Playoff,color=Playoff)) +
-                geom_histogram(position="identity",binwidth = 0.05)+
-                xlab ("W/L%") + ylab("Count (Teams)") + 
-                ggtitle("Win/Loss % Distribution") + 
-                facet_grid(~western, labeller = as_labeller(conference_names))
-playoffplot
-
-# plots to see if FG, 2point, 3point are good indicators of W/L% 
-team_stats <- merge(team_stats,west_ind,by="Tm")
-FGplot <-  team_stats %>% 
-                ggplot(aes(x = `TeamFG%`, y=`OpponentFG%`))+
-                geom_point(aes(col = team_stats$`W/L%`))+
-                scale_color_gradient(low="red", high="green")+
-                facet_grid(~western, labeller = as_labeller(conference_names))+
-                labs(title = "Field Goal and total W/L%")
-FGplot
-
-p_2plot <-  team_stats %>% 
-        ggplot(aes(x = `Team2P%`, y=`Opponent2P%`))+
-        geom_point(aes(col = team_stats$`W/L%`))+
-        scale_color_gradient(low="red", high="green")+
-        facet_grid(~western, labeller = as_labeller(conference_names))+
-        labs(title = "2 points and total W/L%")
-
-p_2plot 
-
-p_3plot <-  team_stats %>% 
-        ggplot(aes(x = `Team3P%`, y=`Opponent3P%`))+
-        geom_point(aes(col = team_stats$`W/L%`))+
-        scale_color_gradient(low="red", high="green")+
-        facet_grid(~western, labeller = as_labeller(conference_names))+
-        labs(title = "3 points and total W/L%")
-p_3plot
-```
-We did some explorartory data analysis to see which variables are good indicator of a team's performance that we may use in future feature engineering. First, we graphed the win/loss rate(%) for each play-off team and non play-off team. From the graph we can see that most play-off teams have a win/loss rate(%) of greater than 0.7 and we may consider it as a threshold when predicting whether a team can make it to playoff. We then explored the relationship of field goal, 2 points and 3 points with the final outcome. Field goal is a good indicator of win/loss rate(%) while we cannot see obvious pattern for 2 points and 3 points. Future feature engineering are needed to determine which variables are to include. 
-
 
 ### Team-level 
 We compared team points per game and opponent points per game of all teams by conference, and explored how these stats were related to conference standings. In general, a team that is strong in offense will have a relatively high team score per game, and a team that is strong in defense will have a relatively low opponent score per game. From the plot below, we can see that some highly ranked teams are strong both offensively and defensively (e.g. TOR), while some teams make up for their weaker offense through strong defense (e.g. IND). Thus, team points or opponent points alone may not be sufficient to quantify the strength of a team, but the use of both stats or the net score (team points - opponent points) may be more appropriate.
@@ -313,6 +300,7 @@ team_def_off_plot(2019)
 ```
 
 We next explored how the standings and W-L records of teams after 20 regular games compared to the final standings and records at the end of the regular season. The plots of conference standings show that many teams that performed well in the beginning of the regular season continued to perform well throughout the season (e.g. GSW & DEN), while some teams that were not faring well earlier on finished the season strong (e.g. HOU & UTA), and still other teams that were in the top 8 after 20 regular season games did not make it to the playoffs in the end (e.g. MEM & LAL). In the team records plot, the line shows the expected number of regular season wins if teams were to maintain the same first-20-game-winning-percentage throughout the regular season. The bandwidth represents the 95% confidence interval for predictions of regular season wins. We can see that while some teams had a consistent performance throughout the season (e.g. MIN & OKC), other teams had better (e.g. HOU) or worse (e.g. MEM) performance in the remaining 62 games. Thus, we learn that even if a team starts the season poorly, there is still an oppurtunity for the team to improve and ultimately reach the playoffs.
+
 ```{r,warning=F,message=F}
 WL_record_cal = function(game_schedule,WL_record){
   for(i in 1:nrow(game_schedule)){
@@ -389,6 +377,63 @@ team_rank_plot(2019)
 #dev.off()
 ```
 
+In recent years, teams are shooting more 3-pointers than ever before. According to records from Basketball Reference, the total number of 3-pointers attempted by the league has increased each of the past seven seasons from 36,395 in the 2011-12 season to 78,742 in the 2018-19 season (https://www.basketball-reference.com/leagues/NBA_stats_totals.html). We were wondering whether teams that were more skilled in shooting 3-pointers or were better at defending 3-point attempts from opponents were able to perform better in the league. From the exploratory plots below, we cannot see obvious patterns of how volume or accuracy of 3-point shot attempts by teams are related to team winning percentages. The same applies to 2-point shot attempts.
+
+```{r warning=F,message=F}
+WL_record = cbind(west_ind,W = 0, L=0)
+WL_record  = rbind(WL_record_cal(get_game_year_feature(2019),WL_record),WL_record_cal(get_game_year_feature(2018),WL_record),
+                   WL_record_cal(get_game_year_feature(2017),WL_record),WL_record_cal(get_game_year_feature(2016),WL_record))
+colnames(WL_record)[c(4,5)] = c("W.all","L.all")
+WL_record = WL_record %>%
+  group_by(western) %>%
+  mutate(Season_Rank = order(order(W.all, decreasing = T)))
+WL_record = WL_record %>%
+  mutate(Playoff = Season_Rank <= 8)
+conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
+
+# plots to see if 2point, 3point are good indicators of W/L%
+team_stats_new <- merge(team_stats,west_ind,by="Tm")
+p_3_1plot <-  team_stats_new %>%
+  ggplot(aes(x = `Team3PA`, y=`Opponent3PA`))+
+  geom_point(aes(col = team_stats_new$`W/L%`))+
+  scale_color_gradient(low="red", high="green",name = "W/L%")+
+  facet_grid(~western, labeller = as_labeller(conference_names))+
+  labs(title = "Team 3-point Shot Attempts and W/L% (Since Season 2015-16)")+
+  xlab("Total 3-point shot attempts by team")+
+  ylab("Total 3-point shot attempts by opponent")
+p_3_1plot
+p_3_2plot <-  team_stats_new %>%
+  ggplot(aes(x = `Team3P%`, y=`Opponent3P%`))+
+  geom_point(aes(col = team_stats_new$`W/L%`))+
+  scale_color_gradient(low="red", high="green",name = "W/L%")+
+  facet_grid(~western, labeller = as_labeller(conference_names))+
+  labs(title = "Team 3-point Accuracy and W/L% (Since Season 2015-16)")+
+  xlab("Percentage of attempted 3-point shots made by team")+
+  ylab("Percentage of attempted 3`-point shots made by opponent")
+p_3_2plot
+
+team_stats_new <- merge(team_stats,west_ind,by="Tm")
+p_2_1plot <-  team_stats_new %>%
+  ggplot(aes(x = `Team2PA`, y=`Opponent2PA`))+
+  geom_point(aes(col = team_stats_new$`W/L%`))+
+  scale_color_gradient(low="red", high="green",name = "W/L%")+
+  facet_grid(~western, labeller = as_labeller(conference_names))+
+  labs(title = "Team 2-point Shot Attempts and W/L% (Since Season 2015-16)")+
+  xlab("Total 2-point shot attempts by team")+
+  ylab("Total 2-point shot attempts by opponent")
+p_2_1plot
+p_2_2plot <-  team_stats_new %>%
+  ggplot(aes(x = `Team2P%`, y=`Opponent2P%`))+
+  geom_point(aes(col = team_stats_new$`W/L%`))+
+  scale_color_gradient(low="red", high="green",name = "W/L%")+
+  facet_grid(~western, labeller = as_labeller(conference_names))+
+  labs(title = "Team 2-point Accuracy and W/L% (Since Season 2015-16)")+
+  xlab("Percentage of attempted 2-point shots made by team")+
+  ylab("Percentage of attempted 2-point shots made by opponent")
+p_2_2plot
+```
+
+
 ### Specific effect
 #### Home-court advantage
 The NBA regular season consists of each team playing 82 games, 41 at home and 41 away. We examined home and away records of teams to better understand home-court advantage in the NBA. We can see that most teams have a better record playing at home with a few exceptions (i.e. CHI & MIA). The home-court advantage is more prominent for some teams (e.g. DEN & SAS) while mattering less for other teams (e.g. GSW & OKC).
@@ -455,9 +500,11 @@ home_away_plot = function(year){
     theme(legend.position = "bottom")+
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5))+
     xlab("Teams")+
-    ylab("Number of games")
+    ylab("Number of games")+
+    scale_fill_manual(values = c("#F8766D","#7CAE00","#00BFC4","#C77CFF"), labels = c("Loss against East","Win against East","Loss against West","Win against West"))+
+    theme(legend.title = element_blank())
   
-  return(p)
+  return(p2)
 }
 
 p2 <- home_away_plot(2019)
@@ -467,6 +514,8 @@ p2 <- home_away_plot(2019)
 ```
 
 #### Western-Eastern effect
+The regular season schedule allows for each team to play the 15 teams from the opposing conference twice a year, so a total of 30 games are played against opposing conference teams. We often hear that the Western Conference is better than the Eastern Conference, but we wondered how true this is. We examined records of matches where teams from opposing conferences faced each other. From the plot, we can see that more teams from the Western Conference (teams with bars colored green and pink) lie to the right end of the plot, which indicates that these teams have high winning percentages against teams from the opposing conference. So the Western Conference does seem to be the stronger conference.
+
 ```{r}
 #png("./plots/west_east.png",width = 960,height = 480)
 #p2
@@ -474,7 +523,9 @@ p2 <- home_away_plot(2019)
 p2
 ```
 
-#### Winning streak effect
+#### Winning or losing streak effect
+We next considered whether a team's performance in a game is dependent on the results of the team's previous games. Could a winning streak boost a team's confidence? Or does a winning streak mean a team has been playing extremely hard on the court and will eventually suffer from greater fatigue? To investigate the impact of previous match results, we looked at match records of teams in the game following win or loss streaks of different lengths. In the 2018-19 season, the longest winning streak was 11 games by the Golden State Warriors and the longest losing streak was 18 games by the New York Knicks. For each team, we applied the Chi-Square test of independence to assess the relationship between streaks and results of the following match. Test results indicated that a statistically significant relationship existed only for the Philadelphia 76ers. A boxplot is used to visualize how the overall performances of all teams in the league vary after different streaks (only winning or losing streaks of up to 3 are shown since other longer streaks are much less common). 
+
 ```{r}
 library(data.table)
 library(rowr)
@@ -518,39 +569,9 @@ team_multiple_game_data = function(year){
 team_multiple_game_data_2019 <- team_multiple_game_data(2019)
 
 
-
-# paired t-test for the difference between conditional and marginal probability
-condition_prob<-function(matrix){
-  con_prob=matrix[,"1"]/(matrix[,"1"]+matrix[,"0"])
-  return(con_prob)
-}
-
-marginal_prob<-function(matrix){
-  colSums(matrix)[2]/(colSums(matrix)[2]+colSums(matrix)[1])
-}
-
-con<-lapply(team_multiple_game_data_2019$game_after_streak,condition_prob)
-mar<-lapply(team_multiple_game_data_2019$game_after_streak, marginal_prob)
-
-ite<-1
-mar_rep<-NA
-for (i in mar){
-  mar_rep<-c(mar_rep,rep(i,length(con[[ite]])))
-  ite<-ite+1
-}
-
-mar_rep<-na.omit(mar_rep)
-con<-unlist(con)
-t.test(mar_rep,con,paired = T)
-
-#chi-square test for independence
+# chi-square test for independence
 tests<-lapply(team_multiple_game_data_2019$game_after_streak, chisq.test)
-pval<-NA
-for (i in tests){
-  pval<-c(pval,i$p.value)
-}
-pval<-na.omit(pval)
-sum(pval<0.05)
+names(which(sapply(tests, function(f) f$p.value) < 0.05))
 
 # merge winning streak data of all teams
 all_team_streaks <- bind_rows(team_multiple_game_data_2019$game_after_streak, .id = "team")
@@ -563,60 +584,37 @@ all_team_streaks_plot <- all_team_streaks  %>% filter(Streak %in% c("L3","L2","L
 all_team_streaks_plot$Streak <- factor(all_team_streaks_plot$Streak,levels = c("L3","L2","L1","W1","W2","W3"))
 ggplot(data=all_team_streaks_plot, aes(x=Streak, y=winProb)) +
   geom_boxplot(show.legend = F) +
-  labs(title = "Team Performances After Winning or Losing Streak") +
-  ylab("Winning percentage of game following a streak")
+  labs(title = "Team Performances After Winning or Losing Streak (Season 2018-19)") +
+  ylab("Proportion of game following streak won")
+```
 
 
+#### Fatigue effect
+The NBA regular season is packed into a tight schedule of 82 games for each team, so sometimes a team finds itself having to play on consecutive (back-to-back) nights, leaving less time for rest and recovery in between games, which may take a toll on the players. We were wondering whether as a result, teams perform worse if facing a back-to-back schedule. Using game records from the 2018-19 season, we see that the average proportion of games won by all teams in the league when the game is a back-to-back game is somewhat lower compared to the winning proportion if the teams had extra days to rest. Chi-Square tests of independence indicated that a statistically significant relationship between whether a game was played back-to-back and whether the game was won or lost existed only for the Washington Wizards. 
 
-
-
-
-
-
-
-
+```{r}
 # merge and plot back-to-back game data of all teams
 all_team_consecutive <- bind_rows(team_multiple_game_data_2019$game_consecutive, .id = "team")
 all_team_consecutive$consecutive <- unlist(lapply(team_multiple_game_data_2019$game_consecutive, rownames))
 colnames(all_team_consecutive)[2:3] <- c("lose","win")
 all_team_consecutive$winProb <- all_team_consecutive$win/(all_team_consecutive$win + all_team_consecutive$lose)
 ggplot(data=all_team_consecutive, aes(x=consecutive, y=winProb)) +
-  geom_boxplot(show.legend = F) 
-
-
-#paired t-test for the difference between conditional and marginal probability
-con <- lapply(team_multiple_game_data_2019$game_consecutive, condition_prob)
-mar <- lapply(team_multiple_game_data_2019$game_consecutive, marginal_prob)
-
-ite<-1
-mar_rep<-NA
-for (i in mar){
-  mar_rep<-c(mar_rep,rep(i,length(con[[ite]])))
-  ite<-ite+1
-}
-
-
-mar_rep<-na.omit(mar_rep)
-con<-unlist(con)
-t.test(mar_rep,con,paired = T)
+  geom_boxplot(show.legend = F) +
+  labs(title = "Team Performances In Back-to-back Games (Season 2018-19)") +
+  ylab("Proportion of game won") +
+  xlab("Back-to-back game or not")
 
 
 # chi-square test for independence
 tests<-lapply(team_multiple_game_data_2019$game_consecutive, chisq.test)
-pval<-NA
-for (i in tests){
-  pval<-c(pval,i$p.value)
-}
-pval<-na.omit(pval)
-sum(pval<0.05)
+names(which(sapply(tests, function(f) f$p.value) < 0.05))
 ```
-
-
 
 
 ### Player-level
 
-Basketball is a team sport, but the value of individual talent is not to be overlooked. Win shares is a metric that is designed to estimate an individual player's contribution to the team in terms of wins. We identify the win shares of the player with the most win shares on each team. We can see that teams that have a dominant player tend to perform better.
+Basketball is a team sport, but the value of individual talent is not to be overlooked. Win shares is a metric that is designed to estimate an individual player's contribution to the team in terms of wins. We identify the win shares of the player with the most win shares on each team (only considering players with win shares in the top 100 of the league). We can see that teams that have a dominant player tend to perform better. Note that some teams are missing from the plot because none of the players on the team is ranked in the top 100.
+
 ```{r}
 team_ws_plot = function(year){
   team_stats_year = get_team_year_feature(year)
@@ -632,7 +630,7 @@ team_ws_plot = function(year){
     inner_join(team_stats_year[,c(1,2,3,14,15)],by=c("Tm","TeamName"))
   
   
- Winshare_feature = get_ws_injury_trans_data(year)
+  Winshare_feature = get_ws_injury_trans_data(year)
   WL_record_ws = WL_record %>%
     inner_join(Winshare_feature, by='Tm')
   conference_names <- c(`1` = "Western Conference", `0` = "Eastern Conference")
@@ -657,7 +655,7 @@ team_ws_plot = function(year){
     theme(legend.position = "bottom")+
     guides(colour=FALSE)+
     xlab("Win shares of player with most win shares on each team")+
-    ylab("Conference standings")+
+    ylab("End of regular season conference standings")+
     scale_y_continuous(
       breaks = WL_record_ws$order,
       labels = paste0(WL_record_ws$Season_Rank,". ",WL_record_ws$Tm)
@@ -670,6 +668,8 @@ team_ws_plot(2019)
 #dev.off()
 
 ```
+
+We next examine how players' win shares vary over NBA seasons. We identify the 20 players in the league who have had among the highest single-season win shares during the 2014-15 to 2018-19 season timeframe, and examine how the win shares of these players varied over those five seasons. We see that the win shares of these top players are fairly consistent over seasons. Never does one of these player fail to place in the top 100 in the league in terms of win shares, and over half of these players have consistently made the top 20 list.
 
 ```{r}
 get_ws_raw_data = function(year){
@@ -704,10 +704,11 @@ player_ws_plot = function(){
     filter(Player %in% player_rank_list[1:20]) %>%
     ggplot(aes(x = Player, y = WSRank,fill = Player))+
     geom_boxplot()+
-    #labs(title = player_rank_list[player_rank])+
+    labs(title = "Consistency of Player Win Shares Over 2014-15 to 2018-19 Season")+
     theme(plot.title = element_text(hjust = 0.5))+
     theme(legend.position = "none")+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+    ylab("Win shares ranking in league")
   print(p)
 }
 #png("./plots/player_ws_plot.png",width = 960,height = 480)
@@ -718,19 +719,20 @@ player_ws_plot()
 ```
 
 ## Feature Engineering
-The performance of a team could be captured by both the team-level and player-level statistics. The team-level features that could be included in our current model were:
+The performance of a team could be captured by both team-level and player-level statistics.  
+The team-level features included in our current model are:
 
-* number of W and L, W/L percentage, conference rank
-* team total/average points, oppponent total/average points
-* other secondary statistics: total rebounds, assists, blocks, turnovers, personal fouls
+* Number of wins (W) and losses (L), W/L percentage, conference rank
+* Team total/average points, opponent total/average points
+* Other secondary statistics: total rebounds, assists, blocks, turnovers, personal fouls
 
-The player-level features that could be incorporated in the team performance metrics were
+The player-level features that are incorporated in the team performance metrics include:
 
-* number of league top 100 win share players in the team
-* highest win share value in the team
+* Number of league top 100 win share players on the team
+* Highest win share value on the team
 
 ### PageRank Algorithm 
-```{r}
+```{r eval=FALSE}
 library(igraph)
 library(tcltk)
 library(dplyr)
@@ -779,30 +781,35 @@ plot.igraph(dat_graph_20,
 ## Data Analysis
 
 ### Statistical Model: Generalized Bradley-Terry Logistic Regression Model
-Why we choose logit model over machine learning models:
 
-- Better Interpretation: infernce and prediction  
-- Prediction Accuracy: achieve similar performance compared to tree-based ML models 
-- Time Saving 
-    - save training time 
-    - no need for parameter tuning, cross-validation...
+We used a generalized Bradley-Terry logistic regression model as the basis to generate winning probabilities of teams. We chose the logit model over more complex machine learning models for the following reasons:
+
+* The logit model (regression coefficients) is easier to interpret than machine learning models.
+* The logit model can achieve similar performance compared to tree-based ML models.
+* The training of a logit model is fast.
+* Use of the logit model does not require parameter tuning or cross-validation.
 
 
 #### Model Formulation
 $$ logit(Pr(i \succ j \ \text{in game} \ k )) = \lambda_i - \lambda_j + \delta \cdot I(i \in adv)+ \gamma^{\top} z_{ij}  $$
 
+where $\lambda_i$ and $\lambda_j$ are the team performance vectors defined based on feature engineering. $I(I \in adv)$ is the indicator for home-court advantage, and $z_{ij}$ are some potential effects not included in the team performance, such as western-eastern effect.  
 
 #### Evaluation Metric
 Cross-Entropy Loss:
 $$ \mathcal{L} = - \sum_{i=1}^N y_i log(\hat{p_i})+(1-y_i) log(1-\hat{p_i}) $$
 
-#### Prediction Results
-
 #### Model Checking
-- Overdispersion: quasibinomial, dispersion parameter $\approx$ 1 
+Since there is overdispersion in the data, we use a quasibinomial model instead with dispersion parameter $\approx$ 1. 
 
+#### Model Training and Testing
+We used data from the first 20 games of each team (total of 300 games combined) of the 2015-16 to 2017-18 seasons as the training set and the first 20 games of each team of the 2018-19 season as the test set. A generalized Bradley-Terry quasibinomial model was fit using the data. The model takes two teams into account at a time. Features selected (refer to Feature Engineering section above) are stored as vectors $\lambda_i$ and $\lambda_j$ for each team. The Bradley-Terry model is parametrized by the differences in terms of PTS (points), TRB (total rebounds), AST (assists), STL (steals), BLK (blocks), TOV (turnovers) and PF (personal fouls) between each of the two teams, plus an indicator of home-court advantage, and other trivial effects such as western-eastern effect. Cross-entropy loss was used to validate the model. The model would generate the probability of winning and losing for each of the two teams. If a team has a probability of winning that is greater than 0.5, we would regard the team as the winner, and vice versa. 
 
+#### Model Interpretation
+In the following example, the home-court indicator (which is the intercept term in model summary) is statistically significant(p-value<1e-8). Team total personal fouls (p-value = 0.0251) and number of high winshare players (p-value = 0.028) are two other factors that contribute to winning. To interpret how the number of high winshare players could affect a game, if we increase one high winshare player in a team and hold other covariates unchanged, the odds of winning would be $exp(0.2314) = 1.26$ (95% CI: (1.03, 1.55)) times of the original odds. 
 
+#### Prediction Results
+For illustration purposes, if we use the first 300 games of the 2016-17 season as the training set and the first 300 games of the 2017-18 season as the test set (each team having played approximately 20 games), then we get a prediction accuracy of 0.678 ([0.647,0.708]) with a sensitivity of 0.52 and specificity of 0.79. 
 
 ```{r}
 library(caret)
@@ -838,7 +845,7 @@ build_logit_model_year = function(train_year = 2018, test_year = 2019, firstN = 
   ## training accuracy
   
   print(confusionMatrix(factor(ifelse(logit_model$fitted.values>0.5,1,0)),
-                               factor(train_set$HomeWin)))
+                        factor(train_set$HomeWin)))
   
   ## testing accuracy
   pred_win_prob = predict(logit_model,newdata = test_set, type = "response")
@@ -854,49 +861,14 @@ head(test_set_pred)
 ```
 
 
-### Machine Learning Models: Decision Tree and Random Forest 
-
-```{r, eval=F}
-library(rpart.plot)
-library(randomForest)
-
-build_dec_tree_year = function(train_year = 2018, test_year = 2019, firstN = 300){
-  
-
-  
-  train_set = get_train_test_data(train_year,firstN)$data_ML
-  test_set = get_train_test_data(test_year,firstN)$data_ML
-  
-  print(colnames(train_set))
-  print(head(train_set))
-  
-  DecTreefit = train(factor(HomeWin) ~ . , 
-                   method = "rpart", data = train_set[,-c(1:5)])
-
-  # create the tree plot
-  rpart.plot(DecTreefit$finalModel)
-
- # random forest model
-  RFfit = randomForest(factor(HomeWin) ~ ., data = train_set[,-c(1:5)])
-  varImpPlot(RFfit)
-  pred_win_prob = predict(RFfit,newdata = test_set, type = "prob")
-  pred_game = predict(RFfit,newdata = test_set)
-  test_set_pred = cbind(test_set,pred_win_prob,pred_game)
-  print(confusionMatrix(factor(test_set_pred$pred_game),factor(test_set_pred$HomeWin)))
-  return(test_set_pred)
-}
-test_set_pred_tree = build_dec_tree_year(2017,2018)
-```
-
 ### Simulation Framework
 
-Simulate each game using `rbinom` with the prob parameters equal to our predicted winning probs. We could obtain the following results:
+We then proceeded with running simulations to predict the 2019-20 Western Conference playoff teams. We created the functions `WL_record_cal( )` to calculate the number of wins and losses for each team given the game schedule, and `game_simulation( )` to simulate the process 100 times. To realize this, we first generate 300 team encounters randomly as a game schedule. We simulate each game using `rbinom` with the probability parameters equal to our predicted winning probabilities obtained from the generalized BT model. Given the numbers of wins and losses in the simulation, we would then rank the teams and determine the top 8 teams. Such a strategy would allow us to obtain for each team average, median, and confidence intervals of regular season wins as well as playoff probabilities.
 
-- Playoff prob
-- The average/ median/ CI of winning games for each team
+Using the 2018-19 season as an illustration, our simulations result in HOU winning on average 62.4 of the 82 regular season games, and making it to the playoffs in all simulations, so in our mind the chance of HOU making the playoffs is 100%. On the other hand, we predict other teams (i.e. SAC and PHO) to have a 0% chance of making the playoffs, which means we are certain that these teams have no hopes of making the playoffs. 
 
 ```{r}
-## Remaining 60 games
+## Remaining 62 games
 set.seed(2019)
 B = 100
 game_simulation = function(pred_result, B, year, Nfirst = 300){
@@ -957,9 +929,15 @@ print(WL_record_west)
 ```
 
 
-### Extension: Integrative Prediction Using Mutiple Seasons Data
+### Extension: Integrative Prediction Using Multiple Seasons Data
 
 #### Year-Effect Exploration
+
+As an extension, we also considered the year effect, or in other words the effect of clustering of different years’ data. Intuitively, this is important because if data from the 2019-20 season resemble data from one of the past seasons but not another, then the data more dissimilar from that of the 2019-20 season would be less representative.
+
+To explore whether clustering effects exist, we created the function `team_pc_plot()`, which first uses principal component analysis (PCA) to reduce our higher dimensional data with a larger set of variables to a smaller set of just two principal components (PCs) that still manages to retain most of the information in the original data. The new coordinate system and transformed data defined in terms of the two PCs are shown. Concentration ellipses are then used to encircle data of all teams from the same season. From the graph, we can see that data for separate years are closely packed together and there is no clear pattern of a year-effect. 
+
+We also visualized the distance between every pair of seasons with a season distance matrix. We can see from the matrix that the closer together two years are, the smaller the in-between distance is, which is in line with our intuition. 
 
 
 ```{r}
@@ -999,7 +977,7 @@ team_pc_plot = function(){
   rownames(league_summary) = league_summary$Season
   
   
- 
+  
   
   p1 = # team_stats_pc %>%
     ggplot(data = team_stats_pc, aes(x= PC1, y= PC2,col = factor(year)))+
@@ -1009,13 +987,13 @@ team_pc_plot = function(){
     theme(plot.title = element_text(hjust = 0.5))+
     theme(legend.position = "bottom")+
     geom_point(aes(x=PC1_med,y=PC2_med),data = league_summary, size = 5, shape = 7)
- # print(p1)
+  # print(p1)
   
   p1.pca = fviz_pca_ind( prcomp(team_stats_X,scale. = T),
-                        #label = "none", # hide individual labels
-                        habillage = team_stats_all$year, # color by groups
-                        addEllipses = TRUE, # Concentration ellipses
-                        labelsize = 3)+ 
+                         #label = "none", # hide individual labels
+                         habillage = team_stats_all$year, # color by groups
+                         addEllipses = TRUE, # Concentration ellipses
+                         labelsize = 3)+ 
     labs(title = "PC plot of NBA teams from 2015-16 to 2019-20")+
     theme(plot.title = element_text(hjust = 0.5))
   print(p1.pca)
@@ -1026,17 +1004,14 @@ team_pc_plot = function(){
                  order=F,gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))+
     labs(title = "Season Distance Matrix")+
     theme(plot.title = element_text(hjust = 0.5))
-
+  
   print(p3)
   return(year_dist)
 } 
 year_dist = team_pc_plot()
 ```
 
-- PC plot: could not discover significant season patterns (cluster together)
-- distance matrix: neighboring years are closer
-
-
+We created another function `team_cluster_plot()` that uses K-means clustering to group teams from multiple seasons into 5 clusters. The choice of 5 was based on the fact that we have data from 5 NBA seasons. We see that the algorithm results in clusters where observations from the same season are not necessarily grouped together in the same cluster. Instead, it seems that teams are clustered together based on how strong they are. For example, teams in the olive cluster are among the most competitive teams (e.g. GSW 2015-16), while teams in the blue cluster are among the least competitive teams (e.g. PHI 2015-16). Thus, again, it seems that season/year patterns are not apparent. 
 
 ```{r}
 ## kmeans clustering plot
@@ -1056,18 +1031,13 @@ team_cluster_plot = function(){
 team_cluster_plot()
 ```
 
-We group teams from multiple seasons into 5 clusters based on k-means algorithm. 
-
-  - Pink: most competitive teams, e.g. GSW 2015-16
-  - Red: least competitive teams, e.g. PHI 2015-16
-
-No season patterns.
-
 
 #### Integrative Prediction
 
-- Train one model using multiple seasons data
-- Train a separate model for each season data, then make weighted prediction. 
+Despite the year-effect not being highly evident in our data, to make our model more precise and flexible, we still would like to compare the difference between a model with and without the year-effect taken into account. Our original model presented above involves the training of a single model using data across multiple seasons. To consider a model which incorporates the year effect, we created the function `weighted_game_prediction( )`, which trains a separate model for each year, and then makes weighted predictions, with the weight proportional to the inverse of the distance between a year and its following year. 
+
+Since we do not observe year-effect in our data, the prediction accuracy of the extended model does not improve compared to the original model. However, this function is still of great use as it provides users with an additional option and users can always choose the model that better suits their data.
+
 ```{r}
 weighted_game_prediction = function(pred_result,year_dist){
   year = (ncol(pred_result))/2
@@ -1077,10 +1047,10 @@ weighted_game_prediction = function(pred_result,year_dist){
   print(year_weight)
   
   for(i in 1:nrow(pred_result)){
-      pred_result$pred_win_weighted_prob[i] = sum(pred_result[i,seq(1,2*year,by = 2)] * year_weight)
-      pred_result$pred_game_vote[i] = ifelse(pred_result$pred_win_weighted_prob[i]>=0.5,1,0)
-    }
-
+    pred_result$pred_win_weighted_prob[i] = sum(pred_result[i,seq(1,2*year,by = 2)] * year_weight)
+    pred_result$pred_game_vote[i] = ifelse(pred_result$pred_win_weighted_prob[i]>=0.5,1,0)
+  }
+  
   return(pred_result)
 }
 
@@ -1113,7 +1083,7 @@ win_prob_prediction = function(train_year = c(2016,2017,2018), test_year = 2019,
     if (test_year!=2020){
       print("testing accuracy")
       print(confusionMatrix(factor(test_set_pred$pred_game),factor(test_set_pred$HomeWin)))
-    
+      
     }
     return(test_set_pred)
   }
@@ -1128,7 +1098,7 @@ win_prob_prediction = function(train_year = c(2016,2017,2018), test_year = 2019,
       
       logit_model = glm(HomeWin~ team_per_diff,family=binomial(link='logit'),
                         data = train_set)
-     
+      
       pred_win_prob = predict(logit_model,newdata = test_set, type = "response")
       pred_game = ifelse(pred_win_prob>0.5,1,0)
       test_set_pred = data.frame(test_set_pred,pred_win_prob,pred_game)
@@ -1142,11 +1112,6 @@ win_prob_prediction = function(train_year = c(2016,2017,2018), test_year = 2019,
     return(ans)
   }
 }
-#win_prob_pred19_weight = win_prob_prediction(year_effect = 1)
-
-#win_prob_pred19_all = win_prob_prediction()
-#win_prob_pred19_one = win_prob_prediction(train_year = 2018,year_effect = 0)
-#a = build_logit_model_year()
 
 win_prob_pred20_all = win_prob_prediction(train_year = c(2016:2019),test_year = 2020)
 win_prob_pred20_weight = win_prob_prediction(train_year = c(2016:2019),test_year = 2020,year_effect = 1)
@@ -1169,15 +1134,14 @@ train_set_summary = train_set_simu %>%
 WL_record_west = simu_result$result %>%
   filter(western==1)
 
+print(train_set_summary)
+
 saveRDS(WL_record_west,"./data/pre_20_games.rds")
 saveRDS(win_prob_pred20_all,"./data/post_62_games_pred.rds")
-
-
 ```
 
 
-## Summary 
-#### Wrap-up Functions
+## Documentation of Wrap-up Functions
 
 - Data Scraping 
     - `get_schedule_data(year,month)`: obtain the game schedules and results in specific year and month
@@ -1196,19 +1160,53 @@ saveRDS(win_prob_pred20_all,"./data/post_62_games_pred.rds")
     - `home_way_plot(year)`: show each team's home and away records in specific year; show western vs eastern records
     - `team_ws_plot(year)`: show each team's highest winshare in specific year
     - `player_ws_plot()`: show the winshare of top players in the league in recent years
-  
+    - `team_multiple_game_data(year)`: wrangle data for team winnnig/losing streaks as well as team back-to-back games
+
 - Model Building
     - `get_train_test_data(year,firstN)`: obtain the training and test data of first N games in specific year.
     - `build_logit_model_year(train_year, test_year, firstN)`: use the first N games of train_year to build the model, and test the model on test_year. return the prediction results (W/L) and winning probability of each game. 
-  
+
 - Integrative Prediction
     - `combine_season_data()`: combine the team performance feature data of multiple seasons
     - `team_pc_plot()`: create the PC plot for the team performances of all the 30 teams in multiple seasons; the distance matrix of season data
-  - `team_cluster_plot()`: create the cluster plot for each team in multiple seasons
-  - `win_prob_prediction(train_year, test_year,firstN,year_effect)`: The winning probability prediction function allow for year_effect
-  
+    - `team_cluster_plot()`: create the cluster plot for each team in multiple seasons
+    - `win_prob_prediction(train_year, test_year,firstN,year_effect)`: The winning probability prediction function allow for year_effect
+
 - Simulation
-    - `WL_record_cal(game_schedule,WL_record)`: calculate the W/L records for each team given the game schedule
-    - `game_simulation(pred_result,B,year,Nfirst)`: given the predict results in specific year, repeat the game simulation for B times
-  
-  
+  - `WL_record_cal(game_schedule,WL_record)`: calculate the W/L records for each team given the game schedule
+  - `game_simulation(pred_result,B,year,Nfirst)`: given the predict results in specific year, repeat the game simulation for B times
+
+
+## Summary 
+The National Basketball Association (NBA) is a professional basketball league in North America that draws the attention of many basketball fans all over the world. The 2019-20 NBA season is currently ongoing, with the regular season having started in October and scheduled to end in April 2020, at which point the playoffs will begin. Rather than wait until next April, as NBA fans well trained in data science, we decided to work on a project with the objective of predicting the Western Conference NBA playoff teams for the current season. Along the process, we also hope to explore what factors can contribute to teams winning more games and thus being able to make the playoffs. 
+
+The target audience we have in mind are NBA data analysts and NBA fans. We have prepared an analysis report and a project website that contain some of the more technical details of the analysis that may be of more interest to analysts, as well as a screencast that captures some of the major findings of the project, which NBA fans will hopefully enjoy learning about.
+
+We used data scraped mainly from Basketball Reference (https://www.basketball-reference.com/) with additional injury data scraped from spotrac (https://www.spotrac.com/nba/injured-reserve/). There was the need to scrape the data because there are no well-formatted datasets readily available and there are multiple data tables within the websites that are of interest to us. After the scraping and tidying of the data, the dataset contains game-level, team-level and player-level statistics that we hope to further explore.
+
+To select features that can best predict team performance, we first performed exploratory data analysis. In this process, we learned that on the team-level, the combination of team points and opponent points is needed to capture team performance. We also learned that while over half of the teams that rank in the top eight at the end of the first 20 games will later make the playoffs, there is still a long way to go (62 remaining games) until the end of the regular season, and conference standings are still subject to many changes. In addition, while 3-pointers are becoming a more common way of scoring in the league and many of the best teams in the league in the past few seasons are known to have some of the best 3-point shooters in NBA history, there are no obvious patterns of how volume or accuracy of 3-point shot attempts by teams are related to team winning percentages. Team-level statistics are important in defining team performance, but the value of individual talent on teams is not to be overlooked. Most of the teams that make the playoffs have one or multiple star players (as characterized by a high win shares stats), so it is important to consider their presence on the team and whether they are in good health to play. Asides from team-level and player-level statistics, there are other factors that affect the outcome of a game including where the game is played (i.e. whether there is a home-court advantage) and who the game is played against (e.g. an opponent from the Western Conference may be stronger and harder to beat).
+
+Through the exploratory data analysis process, we decided that the performance of a team could be captured by team-level, player-level statistics and other specific effects. Team-level statistics include: team total/average points, opponent total/average points and other secondary statistics such as total rebounds, assists, blocks, turnovers, personal fouls. Player-level statistics include the highest win share value on the team and number of league top 100 win share players on the team, both taking into account severe player injuries and team transfers. Other specific effects include: home-court advantage and western-eastern effect.
+
+To incorporate these features into our prediction, we built a generalized Bradley-Terry logistic regression model. The model is parametrized by the features selected above. We used a cross-entropy loss to validate the model. The model would generate the probability of wins and losses for each of the two teams. If a team has a probability of winning that is greater than 0.5, we would regard the team as the winner, and vice versa. We then used the winning probabilities given by the model in simulations. We first generated 300 team encounters randomly as a game schedule. We would then assign the probability of winning for each team based on our previous model prediction results. Given the numbers of wins and losses in the simulation, we would then rank the teams and determine the top eight teams. We also considered a model that accounts for year-effect, or in other words the effect of clustering of different years’ data. However, we do not observe an apparent year-effect in our data, so this extended model did not improve our prediction accuracy. 
+
+Based on our analysis above, the eight teams in the Western Conference we predict to make the playoffs this season are: 
+Los Angeles Lakers
+Los Angeles Clippers
+Denver Nuggets
+Utah Jazz
+Houston Rockets
+Dallas Mavericks
+Oklahoma City Thunder
+Minnesota Timberwolves
+
+### Limitations
+
+The major limitation of this project is that the team feature vector used in the prediction model may not be representative of a team at a particular point in time. A team’s ability is subject to change as the season progresses. For one thing, accidental injuries occur often during games. If a star player gets seriously injured like Kevin Durant did last year, the team’s performance will be heavily undermined. Our model accounts for current known player injuries, but cannot anticipate injuries that will occur later in the season. In addition, a team’s roster may change as players get traded.
+
+### Future works
+
+To improve our current model, three more features could be further explored: streak effect, fatigue (i.e. back-to-back games), and coaching staff. Our analysis did confirm the independence between streak/fatigue and game results for most teams individually. However, the p-value for the t-test between the marginal winning probability and the conditional winning probabilities given fatigue is 0.06 when incorporating all the teams. If we could come up with other ways to characterize streak and fatigue, the two features may help increase the model accuracy. Also, a coach is key to a team and incorporating coaching effects may give better predictions. Besides predicting playoffs, data could be used to help teams improve performances. We are interested in using player statistics and tracking data to investigate decision making during a game. Some of the potential questions are: what is the optimal lineup for a team when facing a specific opponent and at a specific time; what is the best shooting location for a player; at a given time and place, should a player pass the ball or shoot, etc. 
+
+
+
